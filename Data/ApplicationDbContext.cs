@@ -10,5 +10,18 @@ namespace TechSupportXPress.Data
             : base(options)
         {
         }
+
+        public DbSet<Ticket> Tickets { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<Ticket>()
+                   .HasOne(c => c.CreatedBy)
+                   .WithMany()
+                   .HasForeignKey(c => c.CreatedById)
+                   .OnDelete(DeleteBehavior.Restrict);
+        }
     }
 }
