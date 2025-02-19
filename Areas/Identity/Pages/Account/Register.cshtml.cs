@@ -80,6 +80,31 @@ namespace TechSupportXPress.Areas.Identity.Pages.Account
             [Display(Name = "Email")]
             public string Email { get; set; }
 
+            [Required]
+            [Display(Name = "First Name")]
+            public string FirstName { get; set; }
+
+            [Required]
+            [Display(Name = "Middle Name")]
+            public string MiddleName { get; set; }
+
+            [Required]
+            [Display(Name = "Last Name")]
+            public string LastName { get; set; }
+
+
+            [Required]
+            [Display(Name = "Gender")]
+            public string Gender { get; set; }
+
+            [Required]
+            [Display(Name = "Country")]
+            public string Country { get; set; }
+
+            [Required]
+            [Display(Name = "City")]
+            public string City { get; set; }
+
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -114,6 +139,13 @@ namespace TechSupportXPress.Areas.Identity.Pages.Account
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
+
+                user.FirstName = Input.FirstName;
+                user.MiddleName = Input.MiddleName;
+                user.LastName = Input.LastName;
+                user.Gender = Input.Gender;
+                user.Country = Input.Country;
+                user.City = Input.City;
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
