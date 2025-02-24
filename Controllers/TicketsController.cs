@@ -84,7 +84,7 @@ namespace TechSupportXPress.Controllers
             {
                 return NotFound();
             }
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "Id", ticket.CreatedById);
+            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName", ticket.CreatedById);
             return View(ticket);
         }
 
