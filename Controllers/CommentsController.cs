@@ -26,6 +26,15 @@ namespace TechSupportXPress.Controllers
             return View(await applicationDbContext.ToListAsync());
         }
 
+        public async Task<IActionResult> TicketsComments(int id)
+        {
+            var comments = await _context.Comments
+                .Where(c => c.TicketId == id)
+                .Include(c => c.CreatedBy)
+                .Include(c => c.Ticket).ToListAsync();
+            return View(comments);
+        }
+
         // GET: Comments/Details/5
         public async Task<IActionResult> Details(int? id)
         {
