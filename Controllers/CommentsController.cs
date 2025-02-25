@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -70,7 +72,11 @@ namespace TechSupportXPress.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Comment comment)
         {
-                _context.Add(comment);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            comment.CreatedOn = DateTime.Now;
+            comment.CreatedById = userId;
+
+            _context.Add(comment);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             
