@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -9,29 +8,25 @@ using Microsoft.EntityFrameworkCore;
 using TechSupportXPress.Data;
 using TechSupportXPress.Models;
 
-namespace TechSupportXPress.Controllers
+namespace TechSupportXPress.Views
 {
-    public class TicketsController : Controller
+    public class AuditTrailsController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public TicketsController(ApplicationDbContext context)
+        public AuditTrailsController(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        // GET: Tickets
+        // GET: AuditTrails
         public async Task<IActionResult> Index()
         {
-            var tickets = await _context.Tickets
-                .Include(t => t.CreatedBy)
-                .OrderByDescending(t => t.CreatedOn)
-                .ToListAsync();
-
-            return View(tickets);
+            var applicationDbContext = _context.AuditTrails.Include(a => a.User);
+            return View(await applicationDbContext.ToListAsync());
         }
 
-        // GET: Tickets/Details/5
+        // GET: AuditTrails/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -39,55 +34,42 @@ namespace TechSupportXPress.Controllers
                 return NotFound();
             }
 
-            var ticket = await _context.Tickets
-                .Include(t => t.CreatedBy)
+            var auditTrail = await _context.AuditTrails
+                .Include(a => a.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (ticket == null)
+            if (auditTrail == null)
             {
                 return NotFound();
             }
 
-            return View(ticket);
+            return View(auditTrail);
         }
 
-        // GET: Tickets/Create
+        // GET: AuditTrails/Create
         public IActionResult Create()
         {
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
+            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id");
             return View();
         }
 
-        // POST: Tickets/Create
+        // POST: AuditTrails/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Ticket ticket)
+        public async Task<IActionResult> Create([Bind("Id,Action,Module,AffectedTable,TimeStamp,IpAddress,UserId")] AuditTrail auditTrail)
         {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                ticket.CreatedOn = DateTime.Now;
-                 ticket.CreatedById = userId;
-                _context.Add(ticket);
-                await _context.SaveChangesAsync();
-
-            //Audit Log
-            var activity = new AuditTrail
+            if (ModelState.IsValid)
             {
-                Action = "Create",
-                TimeStamp = DateTime.Now,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserId = userId,
-                Module = "Tickets",
-                AffectedTable = "Tickets"
-            };
-
-            _context.Add(activity);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
+                _context.Add(auditTrail);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", auditTrail.UserId);
+            return View(auditTrail);
         }
 
-        // GET: Tickets/Edit/5
+        // GET: AuditTrails/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -95,23 +77,23 @@ namespace TechSupportXPress.Controllers
                 return NotFound();
             }
 
-            var ticket = await _context.Tickets.FindAsync(id);
-            if (ticket == null)
+            var auditTrail = await _context.AuditTrails.FindAsync(id);
+            if (auditTrail == null)
             {
                 return NotFound();
             }
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName", ticket.CreatedById);
-            return View(ticket);
+            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", auditTrail.UserId);
+            return View(auditTrail);
         }
 
-        // POST: Tickets/Edit/5
+        // POST: AuditTrails/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Ticket ticket)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Action,Module,AffectedTable,TimeStamp,IpAddress,UserId")] AuditTrail auditTrail)
         {
-            if (id != ticket.Id)
+            if (id != auditTrail.Id)
             {
                 return NotFound();
             }
@@ -120,12 +102,12 @@ namespace TechSupportXPress.Controllers
             {
                 try
                 {
-                    _context.Update(ticket);
+                    _context.Update(auditTrail);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!TicketExists(ticket.Id))
+                    if (!AuditTrailExists(auditTrail.Id))
                     {
                         return NotFound();
                     }
@@ -136,11 +118,11 @@ namespace TechSupportXPress.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "Id", ticket.CreatedById);
-            return View(ticket);
+            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", auditTrail.UserId);
+            return View(auditTrail);
         }
 
-        // GET: Tickets/Delete/5
+        // GET: AuditTrails/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -148,35 +130,35 @@ namespace TechSupportXPress.Controllers
                 return NotFound();
             }
 
-            var ticket = await _context.Tickets
-                .Include(t => t.CreatedBy)
+            var auditTrail = await _context.AuditTrails
+                .Include(a => a.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (ticket == null)
+            if (auditTrail == null)
             {
                 return NotFound();
             }
 
-            return View(ticket);
+            return View(auditTrail);
         }
 
-        // POST: Tickets/Delete/5
+        // POST: AuditTrails/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var ticket = await _context.Tickets.FindAsync(id);
-            if (ticket != null)
+            var auditTrail = await _context.AuditTrails.FindAsync(id);
+            if (auditTrail != null)
             {
-                _context.Tickets.Remove(ticket);
+                _context.AuditTrails.Remove(auditTrail);
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool TicketExists(int id)
+        private bool AuditTrailExists(int id)
         {
-            return _context.Tickets.Any(e => e.Id == id);
+            return _context.AuditTrails.Any(e => e.Id == id);
         }
     }
 }

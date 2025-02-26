@@ -73,6 +73,20 @@ namespace TechSupportXPress.Controllers
 
                 if (result.Succeeded)
                 {
+                    //Audit Log
+                    var activity = new AuditTrail
+                    {
+                        Action = "Create",
+                        TimeStamp = DateTime.Now,
+                        IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                        UserId = userId,
+                        Module = "Users",
+                        AffectedTable = "Users"
+                    };
+
+                    _context.Add(activity);
+                    await _context.SaveChangesAsync();
+
                     return RedirectToAction("Index");
                 }
                 else
