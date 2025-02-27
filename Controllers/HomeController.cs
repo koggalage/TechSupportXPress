@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
+using TechSupportXPress.Data;
 using TechSupportXPress.Models;
 
 namespace TechSupportXPress.Controllers
@@ -7,15 +9,30 @@ namespace TechSupportXPress.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly ApplicationDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            if (!User.Identity.IsAuthenticated)
+            {
+
+                return this.Redirect("~/identity/account/login");
+            }
+            else
+            {
+                var tickets = await _context.Tickets
+                .Include(t => t.CreatedBy)
+                .OrderByDescending(t => t.CreatedOn)
+                .ToListAsync();
+
+                return View(tickets);
+            }
         }
 
         public IActionResult Privacy()

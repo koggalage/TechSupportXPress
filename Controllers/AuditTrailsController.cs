@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using TechSupportXPress.Data;
 using TechSupportXPress.Models;
 
-namespace TechSupportXPress.Views
+namespace TechSupportXPress.Controllers
 {
     public class AuditTrailsController : Controller
     {
