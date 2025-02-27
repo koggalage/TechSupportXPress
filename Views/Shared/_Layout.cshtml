@@ -269,18 +269,18 @@
                     @* } *@
                     @* @if (canViewCategories) *@
                     @* { *@
-                        <li>
+                        @* <li>
                             <a asp-action="Index" asp-controller="TicketCategories">
                                 <div class="parent-icon">
                                     <i class="bi bi-droplet-fill"></i>
                                 </div>
                                 <div class="menu-title">Ticket Categories</div>
                             </a>
-                        </li>
+                        </li> *@
                     @* } *@
 
                     @* @if (canViewSubCategories) *@
-                    {
+                   @*  {
                         <li>
                             <a asp-action="SubCategories" asp-controller="TicketSubCategories">
                                 <div class="parent-icon">
@@ -288,7 +288,7 @@
                                 </div>
                                 <div class="menu-title">Ticket Sub-Categories</div>
                             </a>
-                        </li>
+                        </li> *@
                     @* } *@
                     @* @if (canViewAudits) *@
                     @* { *@
@@ -302,14 +302,14 @@
                         </li>
                     @* } *@
 
-                    <li>
+                   @*  <li>
                         <a asp-action="Index" asp-controller="ErrorLogs">
                             <div class="parent-icon">
                                 <i class="bi bi-file-earmark-break-fill"></i>
                             </div>
                             <div class="menu-title">Error Logs</div>
                         </a>
-                    </li>
+                    </li> *@
                     @* @if (canViewUsers) *@
                     @* { *@
                         <li>
@@ -323,106 +323,106 @@
                     @* } *@
                     @* @if (canViewSystemCodes) *@
                     @* { *@
-                        <li>
+                       @*  <li>
                             <a asp-action="Index" asp-controller="SystemCodes">
                                 <div class="parent-icon">
                                     <i class="bi bi-person-lines-fill"></i>
                                 </div>
                                 <div class="menu-title">System Codes</div>
                             </a>
-                        </li>
+                        </li> *@
                    @*  }
                     @if (canViewSystemCodeDetails)
                     { *@
-                        <li>
+                        @* <li>
                             <a asp-action="Index" asp-controller="SystemCodeDetails">
                                 <div class="parent-icon">
                                     <i class="bi bi-person-lines-fill"></i>
                                 </div>
                                 <div class="menu-title">System Code Details</div>
                             </a>
-                        </li>
+                        </li> *@
                     @* }
                     @if (canViewRoles)
                     { *@
-                        <li>
+                       @*  <li>
                             <a asp-action="Index" asp-controller="Roles">
                                 <div class="parent-icon">
                                     <i class="bi bi-person-lines-fill"></i>
                                 </div>
                                 <div class="menu-title">System Roles</div>
                             </a>
-                        </li>
+                        </li> *@
                    @*  }
 
                     @if (canViewDepartments)
                     { *@
-                        <li>
+                        @* <li>
                             <a asp-action="Index" asp-controller="Departments">
                                 <div class="parent-icon">
                                     <i class="bi bi-person-lines-fill"></i>
                                 </div>
                                 <div class="menu-title">Departments</div>
                             </a>
-                        </li>
+                        </li> *@
                     @* }
 
                     @if (canViewTicket)
                     { *@
-                        <li>
+                       @*  <li>
                             <a asp-action="Index" asp-controller="SystemTasks">
                                 <div class="parent-icon">
                                     <i class="bi bi-person-lines-fill"></i>
                                 </div>
                                 <div class="menu-title">System Tasks</div>
                             </a>
-                        </li>
+                        </li> *@
                     @* }
                     @if (canViewUserProfiles)
                     { *@
-                        <li>
+                       @*  <li>
                             <a asp-action="Index" asp-controller="UserRoleProfiles">
                                 <div class="parent-icon">
                                     <i class="bi bi-person-lines-fill"></i>
                                 </div>
                                 <div class="menu-title">User Profiles</div>
                             </a>
-                        </li>
+                        </li> *@
                     @* }
 
                     @if (canViewSystemSettings)
                     { *@
-                        <li>
+                       @*  <li>
                             <a asp-action="Index" asp-controller="SystemSettings">
                                 <div class="parent-icon">
                                     <i class="bi  bi-lock-fill"></i>
                                 </div>
                                 <div class="menu-title">System Settings</div>
                             </a>
-                        </li>
+                        </li> *@
                     @* }
 
                     @if (canViewCountries)
                     { *@
-                        <li>
+                       @*  <li>
                             <a asp-action="Index" asp-controller="Countries">
                                 <div class="parent-icon">
                                     <i class="bi  bi-lock-fill"></i>
                                 </div>
                                 <div class="menu-title">Countries</div>
                             </a>
-                        </li>
+                        </li> *@
                     @* }
                     @if (canViewCities)
                     { *@
-                        <li>
+                        @* <li>
                             <a asp-action="Index" asp-controller="Cities">
                                 <div class="parent-icon">
                                     <i class="bi  bi-lock-fill"></i>
                                 </div>
                                 <div class="menu-title">Cities</div>
                             </a>
-                        </li>
+                        </li> *@
                     @* } *@
                 <li>
                     <a href="#" onclick="document.getElementById('logout-form').submit(); return false;">
