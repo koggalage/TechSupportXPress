@@ -93,6 +93,9 @@ namespace TechSupportXPress.Controllers
             _context.Add(activity);
             await _context.SaveChangesAsync();
 
+            TempData["MESSAGE"] = "Comment successfully Added";
+
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -132,6 +135,9 @@ namespace TechSupportXPress.Controllers
                 {
                     _context.Update(comment);
                     await _context.SaveChangesAsync();
+
+                    TempData["MESSAGE"] = "Comment successfully Updated";
+
                 }
                 catch (DbUpdateConcurrencyException)
                 {

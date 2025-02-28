@@ -87,6 +87,8 @@ namespace TechSupportXPress.Controllers
                     _context.Add(activity);
                     await _context.SaveChangesAsync();
 
+                    TempData["MESSAGE"] = "User is successfully Created";
+
                     return RedirectToAction("Index");
                 }
                 else

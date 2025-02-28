@@ -84,6 +84,8 @@ namespace TechSupportXPress.Controllers
             _context.Add(activity);
             await _context.SaveChangesAsync();
 
+            TempData["MESSAGE"] = "Ticket Details successfully Created";
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -122,6 +124,8 @@ namespace TechSupportXPress.Controllers
                 {
                     _context.Update(ticket);
                     await _context.SaveChangesAsync();
+
+                    TempData["MESSAGE"] = "Ticket Details successfully Updated";
                 }
                 catch (DbUpdateConcurrencyException)
                 {
