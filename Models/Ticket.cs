@@ -29,5 +29,8 @@ namespace TechSupportXPress.Models
         public int? SubCategoryId { get; set; }
         public TicketSubCategory SubCategory { get; set; }
 
+        [DisplayName("Attachment")]
+        public string? Attachment { get; set; }
+
     }
 }

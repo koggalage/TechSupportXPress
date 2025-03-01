@@ -31,17 +31,33 @@
 
                 <tr>
                     <th>
-                        @Html.DisplayNameFor(model => model.Status)
+                        @Html.DisplayNameFor(model => model.StatusId)
                     </th>
                     <td>
-                        @Html.DisplayFor(model => model.Status)
+                        @Html.DisplayFor(model => model.Status.Code)
                     </td>
 
                     <th>
-                        @Html.DisplayNameFor(model => model.Priority)
+                        @Html.DisplayNameFor(model => model.PriorityId)
                     </th>
                     <td>
-                        @Html.DisplayFor(model => model.Priority)
+                        @Html.DisplayFor(model => model.Priority.Description)
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.SubCategoryId)
+                    </th>
+                    <td>
+                        @Html.DisplayFor(model => model.SubCategory.Name)
+                    </td>
+
+                    <th>
+                        @Html.DisplayNameFor(model => model.Attachment)
+                    </th>
+                    <td>
+                        @Html.DisplayFor(model => model.Attachment)
                     </td>
                 </tr>
 
@@ -69,7 +85,7 @@
     </div>
 </div>
 
-<div class="row">
+<div>
     <a class="btn btn-warning" asp-action="Edit" asp-route-id="@Model?.Id">Edit</a>
     <a class="btn btn-primary" asp-action="Index">Back to List</a>
 </div>

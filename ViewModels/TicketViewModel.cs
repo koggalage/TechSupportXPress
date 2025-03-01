@@ -35,5 +35,9 @@ namespace TechSupportXPress.ViewModels
         public TicketSubCategory SubCategory { get; set; }
 
         public List<Ticket> Tickets { get; set; }
+
+        [DisplayName("Attachment")]
+        public string Attachment { get; set; }
+
     }
 }
