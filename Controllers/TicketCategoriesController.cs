@@ -69,6 +69,20 @@ namespace TechSupportXPress.Controllers
                 _context.Add(ticketCategory);
                 await _context.SaveChangesAsync();
 
+            //Audit Log
+            var activity = new AuditTrail
+            {
+                Action = "Create",
+                TimeStamp = DateTime.Now,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                UserId = userId,
+                Module = "Ticket Categories",
+                AffectedTable = "TicketCategories"
+            };
+
+            _context.Add(activity);
+            await _context.SaveChangesAsync();
+
             TempData["MESSAGE"] = "Ticket Category Successfully Added";
 
 
@@ -88,9 +102,6 @@ namespace TechSupportXPress.Controllers
             {
                 return NotFound();
             }
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "Id", ticketCategory.CreatedById);
-            ViewData["DeletedById"] = new SelectList(_context.Users, "Id", "Id", ticketCategory.DeletedById);
-            ViewData["ModifiedById"] = new SelectList(_context.Users, "Id", "Id", ticketCategory.ModifiedById);
             return View(ticketCategory);
         }
 
@@ -116,7 +127,23 @@ namespace TechSupportXPress.Controllers
                 _context.Update(ticketCategory);
                     await _context.SaveChangesAsync();
 
+                //Audit Log
+                var activity = new AuditTrail
+                {
+                    Action = "Edit",
+                    TimeStamp = DateTime.Now,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserId = userId,
+                    Module = "Ticket Categories",
+                    AffectedTable = "TicketCategories"
+                };
+
+
+                _context.Add(activity);
+                await _context.SaveChangesAsync();
+
                 TempData["MESSAGE"] = "Comment successfully Added";
+
 
             }
             catch (DbUpdateConcurrencyException)
