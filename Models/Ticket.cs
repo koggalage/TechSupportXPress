@@ -16,10 +16,14 @@ namespace TechSupportXPress.Models
 
 
         [DisplayName("Status")]
-        public string Status { get; set; }
+        public int StatusId { get; set; }
+        public SystemCodeDetail Status { get; set; }
+
 
         [DisplayName("Priority")]
-        public string Priority { get; set; }
+        public int PriorityId { get; set; }
+        public SystemCodeDetail Priority { get; set; }
+
 
         [DisplayName("Ticket Sub-Category")]
         public int? SubCategoryId { get; set; }

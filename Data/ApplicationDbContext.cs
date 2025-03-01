@@ -16,10 +16,24 @@ namespace TechSupportXPress.Data
         public DbSet<AuditTrail> AuditTrails { get; set; }
         public DbSet<TicketCategory> TicketCategories { get; set; }
         public DbSet<TicketSubCategory> TicketSubCategories { get; set; }
+        public DbSet<SystemCode> SystemCodes { get; set; }
+        public DbSet<SystemCodeDetail> SystemCodeDetails { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<Ticket>()
+        .HasOne(c => c.Priority)
+        .WithMany()
+        .HasForeignKey(c => c.PriorityId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<SystemCodeDetail>()
+         .HasOne(c => c.SystemCode)
+         .WithMany()
+         .HasForeignKey(c => c.SystemCodeId)
+         .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<TicketCategory>()
             .HasOne(c => c.DeletedBy)

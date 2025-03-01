@@ -27,6 +27,8 @@ namespace TechSupportXPress.Controllers
             vm.Tickets = await _context.Tickets
                 .Include(t => t.CreatedBy)
                 .Include(t => t.SubCategory)
+                .Include(t => t.Priority)
+                .Include(t => t.Status)
                 .OrderByDescending(t => t.CreatedOn)
                 .ToListAsync();
 
@@ -55,6 +57,7 @@ namespace TechSupportXPress.Controllers
         // GET: Tickets/Create
         public IActionResult Create()
         {
+            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
             ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
             ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
             return View();
@@ -67,12 +70,18 @@ namespace TechSupportXPress.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(TicketViewModel ticketvm)
         {
+            var pendingstatus = await _context
+                    .SystemCodeDetails
+                    .Include(x => x.SystemCode)
+                    .Where(x => x.SystemCode.Code == "Status" && x.Code == "Pending")
+                    .FirstOrDefaultAsync();
+
             Ticket ticket = new();
             ticket.Id = ticketvm.Id;
             ticket.Title = ticketvm.Title;
             ticket.Description = ticketvm.Description;
-            ticket.Status = ticketvm.Status;
-            ticket.Priority = ticketvm.Priority;
+            ticket.StatusId = pendingstatus.Id;
+            ticket.PriorityId = ticketvm.PriorityId;
             ticket.SubCategoryId = ticketvm.SubCategoryId;
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -96,6 +105,11 @@ namespace TechSupportXPress.Controllers
             await _context.SaveChangesAsync();
 
             TempData["MESSAGE"] = "Ticket Details successfully Created";
+
+            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
+
+            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
+            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
 
             return RedirectToAction(nameof(Index));
         }

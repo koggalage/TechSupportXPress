@@ -1,0 +1,37 @@
+﻿@model TechSupportXPress.Models.SystemCodeDetail
+
+<tr>
+    <th class="col-sm-2">
+        @Html.DisplayNameFor(model => model.Description)
+    </th>
+    <td class="col-sm-10">
+        @Html.DisplayFor(model => model.Description)
+    </td>
+</tr>
+
+<tr>
+    <th class="col-sm-2">
+        @Html.DisplayNameFor(model => model.OrderNo)
+    </th>
+    <td class="col-sm-10">
+        @Html.DisplayFor(model => model.OrderNo)
+    </td>
+</tr>
+
+<tr>
+    <th class="col-sm-2">
+        @Html.DisplayNameFor(model => model.SystemCode)
+    </th>
+    <td class="col-sm-10">
+        @Html.DisplayFor(model => model.SystemCode.Id)
+    </td>
+</tr>
+        </table>
+
+<form asp-action="Delete">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" value="Delete" class="btn btn-danger float-end">Delete System Code Details</button>
+    <a class="btn btn-warning float-start" asp-action="Index"> <i class="fadeIn animated bx bx-arrow-back"></i> Back to List</a>
+</form>
+    </div>
+</div>

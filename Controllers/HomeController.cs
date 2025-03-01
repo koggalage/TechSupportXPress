@@ -28,6 +28,9 @@ namespace TechSupportXPress.Controllers
             {
                 var tickets = await _context.Tickets
                 .Include(t => t.CreatedBy)
+                .Include(t => t.SubCategory)
+                .Include(t => t.Priority)
+                .Include(t => t.Status)
                 .OrderByDescending(t => t.CreatedOn)
                 .ToListAsync();
 

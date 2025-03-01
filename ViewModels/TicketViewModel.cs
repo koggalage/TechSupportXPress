@@ -17,10 +17,15 @@ namespace TechSupportXPress.ViewModels
 
 
         [DisplayName("Status")]
-        public string Status { get; set; }
+        public int StatusId { get; set; }
+
+        public SystemCodeDetail Status { get; set; }
+
 
         [DisplayName("Priority")]
-        public string Priority { get; set; }
+        public int PriorityId { get; set; }
+        public SystemCodeDetail Priority { get; set; }
+
 
         [DisplayName("Ticket Category")]
         public int? CategoryId { get; set; }
