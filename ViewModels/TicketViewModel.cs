@@ -1,8 +1,9 @@
 ﻿using System.ComponentModel;
+using TechSupportXPress.Models;
 
-namespace TechSupportXPress.Models
+namespace TechSupportXPress.ViewModels
 {
-    public class Ticket : AuditInfo
+    public class TicketViewModel : AuditInfo
     {
         [DisplayName("No")]
         public int Id { get; set; }
@@ -21,9 +22,13 @@ namespace TechSupportXPress.Models
         [DisplayName("Priority")]
         public string Priority { get; set; }
 
+        [DisplayName("Ticket Category")]
+        public int? CategoryId { get; set; }
+
         [DisplayName("Ticket Sub-Category")]
         public int? SubCategoryId { get; set; }
         public TicketSubCategory SubCategory { get; set; }
 
+        public List<Ticket> Tickets { get; set; }
     }
 }

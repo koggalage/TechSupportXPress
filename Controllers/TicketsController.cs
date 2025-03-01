@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TechSupportXPress.Data;
 using TechSupportXPress.Models;
+using TechSupportXPress.ViewModels;
 
 namespace TechSupportXPress.Controllers
 {
@@ -21,14 +22,15 @@ namespace TechSupportXPress.Controllers
         }
 
         // GET: Tickets
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(TicketViewModel vm)
         {
-            var tickets = await _context.Tickets
+            vm.Tickets = await _context.Tickets
                 .Include(t => t.CreatedBy)
+                .Include(t => t.SubCategory)
                 .OrderByDescending(t => t.CreatedOn)
                 .ToListAsync();
 
-            return View(tickets);
+            return View(vm);
         }
 
         // GET: Tickets/Details/5
@@ -54,6 +56,7 @@ namespace TechSupportXPress.Controllers
         public IActionResult Create()
         {
             ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
+            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
             return View();
         }
 
@@ -62,9 +65,17 @@ namespace TechSupportXPress.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Ticket ticket)
+        public async Task<IActionResult> Create(TicketViewModel ticketvm)
         {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Ticket ticket = new();
+            ticket.Id = ticketvm.Id;
+            ticket.Title = ticketvm.Title;
+            ticket.Description = ticketvm.Description;
+            ticket.Status = ticketvm.Status;
+            ticket.Priority = ticketvm.Priority;
+            ticket.SubCategoryId = ticketvm.SubCategoryId;
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 ticket.CreatedOn = DateTime.Now;
                  ticket.CreatedById = userId;
                 _context.Add(ticket);
