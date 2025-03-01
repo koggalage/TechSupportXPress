@@ -104,6 +104,7 @@ namespace TechSupportXPress.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 ticket.CreatedOn = DateTime.Now;
                  ticket.CreatedById = userId;
+
                 _context.Add(ticket);
                 await _context.SaveChangesAsync();
 
