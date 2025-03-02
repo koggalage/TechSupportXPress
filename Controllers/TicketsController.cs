@@ -38,25 +38,34 @@ namespace TechSupportXPress.Controllers
         }
 
         // GET: Tickets/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int? id, TicketViewModel vm)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var ticket = await _context.Tickets
-                .Include(t => t.CreatedBy)
-                .Include(t => t.SubCategory)
-                .Include(t => t.Status)
-                .Include(t => t.Priority)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (ticket == null)
+            vm.TicketDetails = await _context.Tickets
+               .Include(t => t.CreatedBy)
+               .Include(t => t.SubCategory)
+               .Include(t => t.Status)
+               .Include(t => t.Priority)
+               .FirstOrDefaultAsync(m => m.Id == id);
+
+           
+
+            if (vm.TicketDetails == null)
             {
                 return NotFound();
             }
 
-            return View(ticket);
+            vm.TicketComments = await _context.Comments
+               .Include(t => t.CreatedBy)
+               .Include(t => t.Ticket)
+               .Where(t => t.TicketId == id)
+               .ToListAsync();
+
+            return View(vm);
         }
 
         // GET: Tickets/Create

@@ -39,5 +39,10 @@ namespace TechSupportXPress.ViewModels
         [DisplayName("Attachment")]
         public string Attachment { get; set; }
 
+        public Comment TicketComment { get; set; }
+
+        public List<Comment> TicketComments { get; set; }
+        public Ticket TicketDetails { get; set; }
+
     }
 }
