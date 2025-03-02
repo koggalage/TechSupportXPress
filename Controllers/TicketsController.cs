@@ -593,6 +593,187 @@ namespace TechSupportXPress.Controllers
             }
         }
 
+
+        public async Task<IActionResult> AssignedTickets(TicketViewModel vm)
+        {
+            var assignedStatus = await _context
+            .SystemCodeDetails
+            .Include(x => x.SystemCode)
+            .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Assigned")
+            .FirstOrDefaultAsync();
+
+            var alltickets = _context.Tickets
+                .Include(t => t.CreatedBy)
+                .Include(t => t.SubCategory)
+                .Include(t => t.Priority)
+                .Include(t => t.Status)
+                .Include(t => t.TicketComments)
+                .Where(x => x.StatusId == assignedStatus.Id)
+                .OrderBy(x => x.CreatedOn)
+                .AsQueryable();
+
+            if (vm != null)
+            {
+                if (!string.IsNullOrEmpty(vm.Title))
+                {
+                    alltickets = alltickets.Where(x => x.Title == vm.Title);
+                }
+
+                if (!string.IsNullOrEmpty(vm.CreatedById))
+                {
+                    alltickets = alltickets.Where(x => x.CreatedById == vm.CreatedById);
+                }
+
+                if (vm.StatusId > 0)
+                {
+                    alltickets = alltickets.Where(x => x.StatusId == vm.StatusId);
+                }
+
+                if (vm.PriorityId > 0)
+                {
+                    alltickets = alltickets.Where(x => x.PriorityId == vm.PriorityId);
+                }
+
+                if (vm.CategoryId > 0)
+                {
+                    alltickets = alltickets.Where(x => x.SubCategory.CategoryId == vm.CategoryId);
+                }
+            }
+
+            vm.Tickets = await alltickets.ToListAsync();
+
+
+            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
+                .Include(x => x.SystemCode)
+                .Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
+            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
+            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
+            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails
+                .Include(x => x.SystemCode)
+                .Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
+            return View(vm);
+        }
+
+        public async Task<IActionResult> ClosedTickets(TicketViewModel vm)
+        {
+            var closedStatus = await _context
+            .SystemCodeDetails
+            .Include(x => x.SystemCode)
+            .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Closed")
+            .FirstOrDefaultAsync();
+
+            var alltickets = _context.Tickets
+               .Include(t => t.CreatedBy)
+               .Include(t => t.SubCategory)
+               .Include(t => t.Priority)
+               .Include(t => t.Status)
+               .Include(t => t.TicketComments)
+               .Where(x => x.StatusId == closedStatus.Id)
+               .OrderBy(x => x.CreatedOn)
+               .AsQueryable();
+
+            if (vm != null)
+            {
+                if (!string.IsNullOrEmpty(vm.Title))
+                {
+                    alltickets = alltickets.Where(x => x.Title == vm.Title);
+                }
+
+                if (!string.IsNullOrEmpty(vm.CreatedById))
+                {
+                    alltickets = alltickets.Where(x => x.CreatedById == vm.CreatedById);
+                }
+
+                if (vm.StatusId > 0)
+                {
+                    alltickets = alltickets.Where(x => x.StatusId == vm.StatusId);
+                }
+
+                if (vm.PriorityId > 0)
+                {
+                    alltickets = alltickets.Where(x => x.PriorityId == vm.PriorityId);
+                }
+
+                if (vm.CategoryId > 0)
+                {
+                    alltickets = alltickets.Where(x => x.SubCategory.CategoryId == vm.CategoryId);
+                }
+            }
+
+            vm.Tickets = await alltickets.ToListAsync();
+
+
+            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
+                .Include(x => x.SystemCode)
+                .Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
+            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
+            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
+            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails
+                .Include(x => x.SystemCode)
+                .Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
+            return View(vm);
+        }
+
+        public async Task<IActionResult> ResolvedTickets(TicketViewModel vm)
+        {
+            var resolvedStatus = await _context
+            .SystemCodeDetails
+            .Include(x => x.SystemCode)
+            .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Resolved")
+            .FirstOrDefaultAsync();
+
+            var alltickets = _context.Tickets
+                .Include(t => t.CreatedBy)
+                .Include(t => t.SubCategory)
+                .Include(t => t.Priority)
+                .Include(t => t.Status)
+                .Include(t => t.TicketComments)
+                .Where(x => x.StatusId == resolvedStatus.Id)
+                .OrderBy(x => x.CreatedOn)
+                .AsQueryable();
+
+            if (vm != null)
+            {
+                if (!string.IsNullOrEmpty(vm.Title))
+                {
+                    alltickets = alltickets.Where(x => x.Title == vm.Title);
+                }
+
+                if (!string.IsNullOrEmpty(vm.CreatedById))
+                {
+                    alltickets = alltickets.Where(x => x.CreatedById == vm.CreatedById);
+                }
+
+                if (vm.StatusId > 0)
+                {
+                    alltickets = alltickets.Where(x => x.StatusId == vm.StatusId);
+                }
+
+                if (vm.PriorityId > 0)
+                {
+                    alltickets = alltickets.Where(x => x.PriorityId == vm.PriorityId);
+                }
+
+                if (vm.CategoryId > 0)
+                {
+                    alltickets = alltickets.Where(x => x.SubCategory.CategoryId == vm.CategoryId);
+                }
+            }
+
+            vm.Tickets = await alltickets.ToListAsync();
+
+
+            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
+                .Include(x => x.SystemCode)
+                .Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
+            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
+            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
+            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails
+                .Include(x => x.SystemCode)
+                .Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
+            return View(vm);
+        }
+
         private bool TicketExists(int id)
         {
             return _context.Tickets.Any(e => e.Id == id);

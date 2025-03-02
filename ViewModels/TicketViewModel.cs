@@ -58,5 +58,8 @@ namespace TechSupportXPress.ViewModels
         [DisplayName("Assigned On")]
         public DateTime? AssignedOn { get; set; }
 
+        [DisplayName("Ticket Category")]
+        public int TicketCategoryId { get; set; }
+
     }
 }
