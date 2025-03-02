@@ -21,9 +21,15 @@ namespace TechSupportXPress.Data
         public DbSet<Department> Departments { get; set; }
         public DbSet<TicketResolution> TicketResolutions { get; set; }
 
+        public DbSet<TicketsSummaryView> TicketsSummaryView { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<TicketsSummaryView>()
+                .HasNoKey()
+                .ToTable(nameof(TicketsSummaryView), k => k.ExcludeFromMigrations());
 
             builder.Entity<TicketResolution>()
             .HasOne(c => c.Status)
