@@ -358,6 +358,141 @@ namespace TechSupportXPress.Controllers
             return RedirectToAction("Resolve", new { id = id });
         }
 
+        public async Task<IActionResult> ClosedConfirmed(int id, TicketViewModel vm)
+        {
+
+            var closedstatus = await _context.SystemCodeDetails
+                .Include(x => x.SystemCode)
+                .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Closed")
+                .FirstOrDefaultAsync();
+
+            //Logged In User
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            TicketResolution resolution = new();
+            resolution.TicketId = id;
+            resolution.StatusId = closedstatus.Id;
+            resolution.CreatedOn = DateTime.Now;
+            resolution.CreatedById = userId;
+            resolution.Description = "Ticket Closed";
+            _context.Add(resolution);
+
+            var ticket = await _context.Tickets
+                .Where(x => x.Id == id)
+                .FirstOrDefaultAsync();
+
+            ticket.StatusId = closedstatus.Id;
+            _context.Update(ticket);
+
+            await _context.SaveChangesAsync();
+
+            //Audit Log
+            var activity = new AuditTrail
+            {
+                Action = "Closed",
+                TimeStamp = DateTime.Now,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                UserId = userId,
+                Module = "Ticket Resolution",
+                AffectedTable = "TicketResolution"
+            };
+
+            _context.Add(activity);
+            await _context.SaveChangesAsync();
+
+            TempData["MESSAGE"] = "Ticket Closed successfully";
+
+            return RedirectToAction("Resolve", new { id = id });
+        }
+
+        public async Task<IActionResult> ReOpen(int? id, TicketViewModel vm)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            vm.TicketDetails = await _context.Tickets
+               .Include(t => t.CreatedBy)
+               .Include(t => t.SubCategory)
+               .Include(t => t.Status)
+               .Include(t => t.Priority)
+               //.Include(t => t.AssignedTo)
+               .FirstOrDefaultAsync(m => m.Id == id);
+
+            vm.TicketComments = await _context.Comments
+                .Include(t => t.CreatedBy)
+                .Include(t => t.Ticket)
+                .Where(t => t.TicketId == id)
+                .ToListAsync();
+
+            vm.TicketResolutions = await _context.TicketResolutions
+               .Include(t => t.CreatedBy)
+               .Include(t => t.Ticket)
+               .Include(t => t.Status)
+               .Where(t => t.TicketId == id)
+               .ToListAsync();
+
+
+            if (vm.TicketDetails == null)
+            {
+                return NotFound();
+            }
+
+
+            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ReOpenConfirmed(int id, TicketViewModel vm)
+        {
+
+            var closedstatus = await _context.SystemCodeDetails
+                .Include(x => x.SystemCode)
+                .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "ReOpened")
+                .FirstOrDefaultAsync();
+
+            //Logged In User
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            TicketResolution resolution = new();
+            resolution.TicketId = id;
+            resolution.StatusId = closedstatus.Id;
+            resolution.CreatedOn = DateTime.Now;
+            resolution.CreatedById = userId;
+            resolution.Description = "Ticket Re-Opened";
+            _context.Add(resolution);
+
+            var ticket = await _context.Tickets
+                .Where(x => x.Id == id)
+                .FirstOrDefaultAsync();
+
+            ticket.StatusId = closedstatus.Id;
+            _context.Update(ticket);
+
+            await _context.SaveChangesAsync();
+
+            //Audit Log
+            var activity = new AuditTrail
+            {
+                Action = "Re-Open",
+                TimeStamp = DateTime.Now,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                UserId = userId,
+                Module = "Ticket Resolution",
+                AffectedTable = "TicketResolution"
+            };
+
+            _context.Add(activity);
+            await _context.SaveChangesAsync();
+
+
+
+            TempData["MESSAGE"] = "Ticket Re-Opened successfully";
+
+            return RedirectToAction("Resolve", new { id = id });
+        }
+
         private bool TicketExists(int id)
         {
             return _context.Tickets.Any(e => e.Id == id);
