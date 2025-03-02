@@ -47,5 +47,13 @@ namespace TechSupportXPress.ViewModels
         [DisplayName("Comment Description")]
         public string CommentDescription { get; set; }
 
+        public TicketResolution Resolution { get; set; }
+        public List<TicketResolution> TicketResolutions { get; set; }
+
+
+        [DisplayName("Assigned To")]
+        public string? AssignedToId { get; set; }
+        public ApplicationUser AssignedTo { get; set; }
+        
     }
 }

@@ -7,101 +7,94 @@
 <div class="card rounded-4">
     <div class="card-body">
         <div class="d-flex align-items-center">
-            <h6 class="mb-0">Ticket Details</h6>
+            <h6 class="mb-0">Ticket Resolution </h6>
         </div>
         <hr />
         <div class="row">
             <div class="col-md-6">
                 <h4>Ticket Details</h4>
                 <table class="table table-bordered table-responsive table-hover table-responsive-lg">
-
                     <tr>
-                        <th>
+                        <th style="background-color:springgreen">
                             @Html.DisplayNameFor(model => model.Title)
                         </th>
                         <td>
                             @Html.DisplayFor(model => model.TicketDetails.Title)
                         </td>
                     </tr>
-
                     <tr>
-
-                        <th>
+                        <th style="background-color:springgreen">
                             @Html.DisplayNameFor(model => model.Description)
                         </th>
                         <td>
                             @Html.DisplayFor(model => model.TicketDetails.Description)
                         </td>
-
                     </tr>
-
                     <tr>
-
-                        <th>
+                        <th style="background-color:springgreen">
                             @Html.DisplayNameFor(model => model.StatusId)
                         </th>
                         <td>
-                            @Html.DisplayFor(model => model.TicketDetails.Status.Code)
+                            @Html.DisplayFor(model => model.TicketDetails.Status.Description)
                         </td>
-
                     </tr>
-
                     <tr>
-
-                        <th>
+                        <th style="background-color:springgreen">
                             @Html.DisplayNameFor(model => model.PriorityId)
                         </th>
                         <td>
                             @Html.DisplayFor(model => model.TicketDetails.Priority.Description)
                         </td>
-
                     </tr>
-
                     <tr>
-
-                        <th>
-                            @Html.DisplayNameFor(model => model.SubCategoryId)
-                        </th>
-                        <td>
-                            @Html.DisplayFor(model => model.TicketDetails.SubCategory.Name)
-                        </td>
-
-                    </tr>
-
-                    <tr>
-
-                        <th>
-                            @Html.DisplayNameFor(model => model.Attachment)
-                        </th>
-                        <td>
-                            @Html.DisplayFor(model => model.TicketDetails.Attachment)
-                        </td>
-
-                    </tr>
-
-                    <tr>
-
-                        <th>
-                            @Html.DisplayNameFor(model => model.CreatedBy.FullName)
+                        <th style="background-color:springgreen">
+                            @Html.DisplayNameFor(model => model.CreatedBy)
                         </th>
                         <td>
                             @Html.DisplayFor(model => model.TicketDetails.CreatedBy.FullName)
                         </td>
-
                     </tr>
-
                     <tr>
-
-                        <th>
+                        <th style="background-color:springgreen">
                             @Html.DisplayNameFor(model => model.CreatedOn)
                         </th>
                         <td>
                             @Html.DisplayFor(model => model.TicketDetails.CreatedOn)
                         </td>
                     </tr>
-
+                    <tr>
+                        <th style="background-color:springgreen">
+                            @Html.DisplayNameFor(model => model.SubCategoryId)
+                        </th>
+                        <td>
+                            @Html.DisplayFor(model => model.TicketDetails.SubCategory.Name)
+                        </td>
+                    </tr>
+                    @* <tr>
+                        <th style="background-color:springgreen">
+                            @Html.DisplayNameFor(model => model.AssignedToId)
+                        </th>
+                        <td>
+                            @Html.DisplayFor(model => model.TicketDetails.AssignedTo.FullName)
+                        </td>
+                    </tr> *@
+                    @* <tr>
+                        <th style="background-color:springgreen">
+                            @Html.DisplayNameFor(model => model.AssignedOn)
+                        </th>
+                        <td>
+                            @Html.DisplayFor(model => model.TicketDetails.AssignedOn)
+                        </td>
+                    </tr> *@
+                    <tr>
+                        <th style="background-color:springgreen">
+                            @Html.DisplayNameFor(model => model.Attachment)
+                        </th>
+                        <td>
+                            @Html.DisplayFor(model => model.TicketDetails.Attachment)
+                        </td>
+                    <tr>
                 </table>
-
                 <div class="col-md-6">
                     <h4>Ticket Resolution History</h4>
                     <table class="table table-bordered table-responsive table-hover table-responsive-lg">
@@ -144,23 +137,19 @@
                     </table>
 
                 </div>
-
             </div>
-
             <div class="col-md-6">
-
                 <h4>Ticket Comments</h4>
-
                 <table class="table table-bordered table-responsive table-hover table-responsive-lg">
                     <thead>
                         <tr>
-                            <th style="background-color: blueviolet !important">
+                            <th style="background-color:green !important">
                                 @Html.DisplayNameFor(model => model.TicketComment.Description)
                             </th>
-                            <th style="background-color:blueviolet !important">
+                            <th style="background-color:green !important">
                                 @Html.DisplayNameFor(model => model.TicketComment.CreatedBy)
                             </th>
-                            <th style="background-color:blueviolet !important">
+                            <th style="background-color:green !important">
                                 @Html.DisplayNameFor(model => model.TicketComment.CreatedOn)
                             </th>
 
@@ -182,29 +171,33 @@
                             </tr>
                         }
                     </tbody>
-
                 </table>
-
-                @if ((@Model.TicketDetails.Status.Code != "Resolved")
-                && (@Model.TicketDetails.Status.Code != "Closed"))
+                @if ((@Model.TicketDetails.Status.Code != "Resolved") && (@Model.TicketDetails.Status.Code != "Closed"))
                 {
-                    <form asp-action="AddComment" method="post" enctype="multipart/form-data">
+                    <form asp-action="ResolvedConfirmed" method="post" enctype="multipart/form-data">
                         <input type="hidden" class="hidden" asp-for="Id" />
                         <div class="row">
-                            <label class="control-label">New Ticket Comment</label>
+                            <label class="control-label">Ticket Status</label>
+                            <select asp-for="StatusId" class="form-control" asp-items="ViewBag.StatusId"></select>
+                        </div>
+                        <div class="row">
+                            <label class="control-label">New Ticket Resolution Comment</label>
                             <textarea asp-for="CommentDescription" type="text" class="form-control-lg"></textarea>
                         </div>
-                        <button class="btn btn-primary float-end mt-5">Add Comment</button>
+                        <button class="btn btn-primary float-end mt-5">Add Resolution Status</button>
                     </form>
                 }
-
+                @if (@Model.TicketDetails.Status.Code == "Resolved")
+                {
+                    <form asp-action="ClosedConfirmed" method="post" enctype="multipart/form-data">
+                        <input type="hidden" class="hidden" asp-for="Id" />
+                        <button class="btn btn-primary float-end mt-5">Close Ticket</button>
+                    </form>
+                }
             </div>
-
-
         </div>
     </div>
 </div>
-
 <div>
     <a asp-action="Index" class="btn btn-warning">Back to List</a>
 </div>

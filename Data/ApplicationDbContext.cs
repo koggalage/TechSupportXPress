@@ -19,10 +19,23 @@ namespace TechSupportXPress.Data
         public DbSet<SystemCode> SystemCodes { get; set; }
         public DbSet<SystemCodeDetail> SystemCodeDetails { get; set; }
         public DbSet<Department> Departments { get; set; }
+        public DbSet<TicketResolution> TicketResolutions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<TicketResolution>()
+            .HasOne(c => c.Status)
+            .WithMany()
+            .HasForeignKey(c => c.StatusId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<TicketResolution>()
+           .HasOne(c => c.Ticket)
+           .WithMany()
+           .HasForeignKey(c => c.TicketId)
+           .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Ticket>()
         .HasOne(c => c.Priority)

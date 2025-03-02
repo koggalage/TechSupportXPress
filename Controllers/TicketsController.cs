@@ -66,6 +66,13 @@ namespace TechSupportXPress.Controllers
                .Where(t => t.TicketId == id)
                .ToListAsync();
 
+            vm.TicketResolutions = await _context.TicketResolutions
+               .Include(t => t.CreatedBy)
+               .Include(t => t.Ticket)
+               .Include(t => t.Status)
+               .Where(t => t.TicketId == id)
+               .ToListAsync();
+
             return View(vm);
         }
 
@@ -269,6 +276,86 @@ namespace TechSupportXPress.Controllers
                 TempData["Error"] = "Comment Details could not be Created" + ex.Message;
                 return View(vm);
             }
+        }
+
+        public async Task<IActionResult> Resolve(int? id, TicketViewModel vm)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            vm.TicketDetails = await _context.Tickets
+               .Include(t => t.CreatedBy)
+               .Include(t => t.SubCategory)
+               .Include(t => t.Status)
+               .Include(t => t.Priority)
+               // .Include(t => t.AssignedTo)
+               .FirstOrDefaultAsync(m => m.Id == id);
+
+            vm.TicketComments = await _context.Comments
+                .Include(t => t.CreatedBy)
+                .Include(t => t.Ticket)
+                .Where(t => t.TicketId == id)
+                .ToListAsync();
+
+            vm.TicketResolutions = await _context.TicketResolutions
+               .Include(t => t.CreatedBy)
+               .Include(t => t.Ticket)
+               .Include(t => t.Status)
+               .Where(t => t.TicketId == id)
+               .ToListAsync();
+
+
+            if (vm.TicketDetails == null)
+            {
+                return NotFound();
+            }
+
+
+            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResolvedConfirmed(int id, TicketViewModel vm)
+        {
+            //Logged In User
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            TicketResolution resolution = new();
+            resolution.TicketId = id;
+            resolution.StatusId = vm.StatusId;
+            resolution.CreatedOn = DateTime.Now;
+            resolution.CreatedById = userId;
+            resolution.Description = vm.CommentDescription;
+            _context.Add(resolution);
+
+            var ticket = await _context.Tickets
+                .Where(x => x.Id == id)
+                .FirstOrDefaultAsync();
+            ticket.StatusId = vm.StatusId;
+            _context.Update(ticket);
+
+            await _context.SaveChangesAsync();
+
+            //Audit Log
+            var activity = new AuditTrail
+            {
+                Action = "Create",
+                TimeStamp = DateTime.Now,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                UserId = userId,
+                Module = "Ticket Resolution",
+                AffectedTable = "TicketResolution"
+            };
+
+            _context.Add(activity);
+            await _context.SaveChangesAsync();
+
+            TempData["MESSAGE"] = "Ticket Resolution Details successfully Created";
+
+            return RedirectToAction("Resolve", new { id = id });
         }
 
         private bool TicketExists(int id)
