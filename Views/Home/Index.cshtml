@@ -150,7 +150,6 @@
                         <th>Comments</th>
                         <th>View</th>
                         <th>Edit</th>
-                        <th>Delete</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -179,16 +178,13 @@
                                 @Html.DisplayFor(modelItem => item.CreatedOn)
                             </td>
                             <td>
-                                <a class="btn btn-secondary" asp-action="TicketsComments" asp-controller="Comments" asp-route-id="@item.Id">Comments</a>
+                                <a class="btn btn-secondary" asp-action="TicketsComments" asp-controller="Comments" asp-route-id="@item.Id">Comments (@(item?.TicketComments?.Count.ToString() ?? "0"))</a>
                             </td>
                             <td>
                                 <a class="btn btn-warning" asp-action="Details" asp-route-id="@item.Id">Details</a>
                             </td>
                             <td>
                                 <a class="btn btn-primary" asp-action="Edit" asp-route-id="@item.Id">Edit</a>
-                            </td>
-                            <td>
-                                <a class="btn btn-danger" asp-action="Delete" asp-route-id="@item.Id">Delete</a>
                             </td>
                         </tr>
                     }
