@@ -31,6 +31,7 @@ namespace TechSupportXPress.Controllers
                 .Include(t => t.SubCategory)
                 .Include(t => t.Priority)
                 .Include(t => t.Status)
+                .Include(t => t.TicketComments)
                 .OrderByDescending(t => t.CreatedOn)
                 .ToListAsync();
 

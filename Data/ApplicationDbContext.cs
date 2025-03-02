@@ -55,16 +55,11 @@ namespace TechSupportXPress.Data
             .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Comment>()
-            .HasOne(c => c.CreatedBy)
-            .WithMany()
-            .HasForeignKey(c => c.CreatedById)
-            .OnDelete(DeleteBehavior.Restrict);
+           .HasOne(c => c.Ticket)
+           .WithMany(c => c.TicketComments)
+           .HasForeignKey(c => c.TicketId)
+           .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Comment>()
-            .HasOne(c => c.Ticket)
-            .WithMany()
-            .HasForeignKey(c => c.TicketId)
-            .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Ticket>()
                    .HasOne(c => c.CreatedBy)
