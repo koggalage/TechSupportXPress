@@ -231,6 +231,46 @@ namespace TechSupportXPress.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        public async Task<IActionResult> AddComment(int id, TicketViewModel vm)
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                Comment newcomment = new();
+                newcomment.TicketId = id;
+                newcomment.CreatedOn = DateTime.Now;
+                newcomment.CreatedById = userId;
+                newcomment.Description = vm.CommentDescription;
+                _context.Add(newcomment);
+                await _context.SaveChangesAsync();
+
+                //Audit Log
+                var activity = new AuditTrail
+                {
+                    Action = "Create",
+                    TimeStamp = DateTime.Now,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserId = userId,
+                    Module = "Comments",
+                    AffectedTable = "Comments"
+                };
+
+                _context.Add(activity);
+                await _context.SaveChangesAsync();
+
+
+                TempData["MESSAGE"] = "Comments Details successfully Created";
+
+                return RedirectToAction("Details", new { id = id });
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Comment Details could not be Created" + ex.Message;
+                return View(vm);
+            }
+        }
+
         private bool TicketExists(int id)
         {
             return _context.Tickets.Any(e => e.Id == id);

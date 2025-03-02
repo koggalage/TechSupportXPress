@@ -44,5 +44,8 @@ namespace TechSupportXPress.ViewModels
         public List<Comment> TicketComments { get; set; }
         public Ticket TicketDetails { get; set; }
 
+        [DisplayName("Comment Description")]
+        public string CommentDescription { get; set; }
+
     }
 }

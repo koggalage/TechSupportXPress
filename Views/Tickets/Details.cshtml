@@ -142,6 +142,19 @@
 
                 </table>
 
+                @if ((@Model.TicketDetails.Status.Code != "Resolved")
+                && (@Model.TicketDetails.Status.Code != "Closed"))
+                {
+                    <form asp-action="AddComment" method="post" enctype="multipart/form-data">
+                        <input type="hidden" class="hidden" asp-for="Id" />
+                        <div class="row">
+                            <label class="control-label">New Ticket Comment</label>
+                            <textarea asp-for="CommentDescription" type="text" class="form-control-lg"></textarea>
+                        </div>
+                        <button class="btn btn-primary float-end mt-5">Add Comment</button>
+                    </form>
+                }
+
             </div>
 
 
