@@ -54,6 +54,9 @@ namespace TechSupportXPress.ViewModels
         [DisplayName("Assigned To")]
         public string? AssignedToId { get; set; }
         public ApplicationUser AssignedTo { get; set; }
-        
+
+        [DisplayName("Assigned On")]
+        public DateTime? AssignedOn { get; set; }
+
     }
 }

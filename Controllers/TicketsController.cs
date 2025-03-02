@@ -290,7 +290,7 @@ namespace TechSupportXPress.Controllers
                .Include(t => t.SubCategory)
                .Include(t => t.Status)
                .Include(t => t.Priority)
-               // .Include(t => t.AssignedTo)
+               .Include(t => t.AssignedTo)
                .FirstOrDefaultAsync(m => m.Id == id);
 
             vm.TicketComments = await _context.Comments
@@ -416,7 +416,7 @@ namespace TechSupportXPress.Controllers
                .Include(t => t.SubCategory)
                .Include(t => t.Status)
                .Include(t => t.Priority)
-               //.Include(t => t.AssignedTo)
+               .Include(t => t.AssignedTo)
                .FirstOrDefaultAsync(m => m.Id == id);
 
             vm.TicketComments = await _context.Comments
@@ -491,6 +491,106 @@ namespace TechSupportXPress.Controllers
             TempData["MESSAGE"] = "Ticket Re-Opened successfully";
 
             return RedirectToAction("Resolve", new { id = id });
+        }
+
+        public async Task<IActionResult> TicketAssignment(int? id, TicketViewModel vm)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            vm.TicketDetails = await _context.Tickets
+               .Include(t => t.CreatedBy)
+               .Include(t => t.SubCategory)
+               .Include(t => t.Status)
+               .Include(t => t.Priority)
+               .Include(t => t.AssignedTo)
+               .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (vm.TicketDetails == null)
+            {
+                return NotFound();
+            }
+
+            vm.TicketComments = await _context.Comments
+                .Include(t => t.CreatedBy)
+                .Include(t => t.Ticket)
+                .Where(t => t.TicketId == id)
+                .ToListAsync();
+
+            vm.TicketResolutions = await _context.TicketResolutions
+               .Include(t => t.CreatedBy)
+               .Include(t => t.Ticket)
+               .Include(t => t.Status)
+               .Where(t => t.TicketId == id)
+               .ToListAsync();
+
+            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
+
+            ViewData["UserId"] = new SelectList(_context.Users, "Id", "FullName");
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AssignedConfirmed(int id, TicketViewModel vm)
+        {
+
+            try
+            {
+                var reassignedstatus = await _context.SystemCodeDetails
+                    .Include(x => x.SystemCode)
+                    .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Assigned")
+                    .FirstOrDefaultAsync();
+
+                //Logged In User
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                TicketResolution resolution = new();
+                resolution.TicketId = id;
+                resolution.StatusId = reassignedstatus.Id;
+                resolution.CreatedOn = DateTime.Now;
+                resolution.CreatedById = userId;
+                resolution.Description = "Ticket Assigned";
+                _context.Add(resolution);
+
+                var ticket = await _context.Tickets
+                    .Where(x => x.Id == id)
+                    .FirstOrDefaultAsync();
+
+                ticket.StatusId = reassignedstatus.Id;
+                ticket.AssignedToId = vm.AssignedToId;
+                ticket.AssignedOn = DateTime.Now;
+                _context.Update(ticket);
+
+                await _context.SaveChangesAsync();
+
+                //Audit Log
+                var activity = new AuditTrail
+                {
+                    Action = "Assign",
+                    TimeStamp = DateTime.Now,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserId = userId,
+                    Module = "Ticket",
+                    AffectedTable = "Ticket"
+                };
+
+                _context.Add(activity);
+                await _context.SaveChangesAsync();
+
+
+
+                TempData["MESSAGE"] = "Ticket Re-Opened successfully";
+
+                return RedirectToAction("Resolve", new { id = id });
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Ticket  could not be re-opened successfully" + ex.Message;
+
+                return View(vm);
+            }
         }
 
         private bool TicketExists(int id)
