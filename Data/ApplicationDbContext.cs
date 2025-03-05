@@ -86,5 +86,24 @@ namespace TechSupportXPress.Data
                    .HasForeignKey(c => c.CreatedById)
                    .OnDelete(DeleteBehavior.Restrict);
         }
+
+        public void EnsureViewsCreated()
+        {
+            var createViewSql = @"
+        CREATE OR REPLACE VIEW TicketsSummaryView AS
+        SELECT 
+            COALESCE(COUNT(T1.Id), 0) AS TotalTickets,
+            COALESCE(SUM(CASE WHEN T2.Code = 'Assigned' THEN 1 ELSE 0 END), 0) AS AssignedTickets,
+            COALESCE(SUM(CASE WHEN T2.Code = 'Closed' THEN 1 ELSE 0 END), 0) AS ClosedTickets,
+            COALESCE(SUM(CASE WHEN T2.Code = 'Pending' THEN 1 ELSE 0 END), 0) AS PendingTickets,
+            COALESCE(SUM(CASE WHEN T2.Code = 'Resolved' THEN 1 ELSE 0 END), 0) AS ResolvedTickets,
+            COALESCE(SUM(CASE WHEN T2.Code = 'ReOpened' THEN 1 ELSE 0 END), 0) AS ReOpenedTickets
+        FROM tickets T1
+        LEFT JOIN systemcodedetails T2 ON T1.StatusId = T2.Id;
+    ";
+
+            Database.ExecuteSqlRaw(createViewSql);
+        }
+
     }
 }

@@ -34,6 +34,7 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     dbContext.Database.Migrate();
+    dbContext.EnsureViewsCreated();
 }
 
 // Configure the HTTP request pipeline.
