@@ -30,12 +30,12 @@ builder.Services.AddHealthChecks()
 var app = builder.Build();
 
 // Apply migrations on startup
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
-    dbContext.EnsureViewsCreated();
-}
+//using (var scope = app.Services.CreateScope())
+//{
+//    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+//    dbContext.Database.Migrate();
+//    dbContext.EnsureViewsCreated();
+//}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
