@@ -1,0 +1,60 @@
+version: 2.1
+
+executors:
+  docker-executor:
+    docker:
+      - image: circleci/python:3.8
+    working_directory: ~/repo
+
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.8
+    steps:
+      - checkout
+      - run:
+          name: Set up Docker
+          command: |
+            docker version
+            docker info
+      - run:
+          name: Build Docker Image
+          command: |
+            IMAGE_TAG=$(git rev-parse --short HEAD)  # Get short Git commit hash
+            docker build -t $GCR_REGISTRY/$GCP_PROJECT_ID/$DOCKER_IMAGE_NAME:$IMAGE_TAG .
+      - run:
+          name: Push Docker Image
+          command: |
+            docker push $GCR_REGISTRY/$GCP_PROJECT_ID/$DOCKER_IMAGE_NAME:$IMAGE_TAG
+            echo "IMAGE_TAG=$IMAGE_TAG" >> $BASH_ENV  # Make the image tag available for subsequent jobs
+
+  deploy:
+    docker:
+      - image: google/cloud-sdk:alpine
+    steps:
+      - checkout
+      - run:
+          name: Set up Google Cloud credentials
+          command: |
+            echo $GCLOUD_SERVICE_KEY | base64 --decode > $HOME/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file=$HOME/gcloud-service-key.json
+            gcloud config set project $GCP_PROJECT_ID
+            gcloud config set compute/zone $COMPUTE_ZONE
+            gcloud config set container/cluster $GKE_CLUSTER_NAME
+            gcloud container clusters get-credentials $GKE_CLUSTER_NAME
+      - run:
+          name: Deploy to GKE
+          command: |
+            IMAGE_TAG=$IMAGE_TAG  # Retrieve the image tag from the build job
+            kubectl set image deployment/techsupportxpress techsupportxpress=$GCR_REGISTRY/$GCP_PROJECT_ID/$DOCKER_IMAGE_NAME:$IMAGE_TAG
+            kubectl apply -f $K8S_DEPLOYMENT_PATH/deployment.yaml
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+
