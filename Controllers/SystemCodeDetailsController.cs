@@ -146,8 +146,6 @@ namespace TechSupportXPress.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
-            {
                 try
                 {
                     var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -180,12 +178,6 @@ namespace TechSupportXPress.Controllers
                     }
                 }
                 return RedirectToAction(nameof(Index));
-            }
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "Id", systemCodeDetail.CreatedById);
-            ViewData["DeletedById"] = new SelectList(_context.Users, "Id", "Id", systemCodeDetail.DeletedById);
-            ViewData["ModifiedById"] = new SelectList(_context.Users, "Id", "Id", systemCodeDetail.ModifiedById);
-            ViewData["SystemCodeId"] = new SelectList(_context.SystemCodes, "Id", "Id", systemCodeDetail.SystemCodeId);
-            return View(systemCodeDetail);
         }
 
         // GET: SystemCodeDetails/Delete/5

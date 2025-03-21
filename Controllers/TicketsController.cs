@@ -150,7 +150,7 @@ namespace TechSupportXPress.Controllers
             var pendingstatus = await _context
                     .SystemCodeDetails
                     .Include(x => x.SystemCode)
-                    .Where(x => x.SystemCode.Code == "Status" && x.Code == "Pending")
+                    .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Description == "Pending")
                     .FirstOrDefaultAsync();
 
             Ticket ticket = new();
@@ -222,14 +222,28 @@ namespace TechSupportXPress.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
-            {
+            
                 try
                 {
-                    _context.Update(ticket);
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                ticket.ModifiedOn = DateTime.Now;
+                ticket.ModifiedById = userId;
+
+                _context.Update(ticket);
                     await _context.SaveChangesAsync();
 
-                    TempData["MESSAGE"] = "Ticket Details successfully Updated";
+                //Audit Log
+                var activity = new AuditTrail
+                {
+                    Action = "Edit",
+                    TimeStamp = DateTime.Now,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserId = userId,
+                    Module = "Tickets",
+                    AffectedTable = "Tickets"
+                };
+
+                TempData["MESSAGE"] = "Ticket Details successfully Updated";
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -243,9 +257,7 @@ namespace TechSupportXPress.Controllers
                     }
                 }
                 return RedirectToAction(nameof(Index));
-            }
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "Id", ticket.CreatedById);
-            return View(ticket);
+            
         }
 
         // GET: Tickets/Delete/5
@@ -633,7 +645,7 @@ namespace TechSupportXPress.Controllers
             {
                 TempData["Error"] = "Ticket  could not be re-opened successfully" + ex.Message;
 
-                return View(vm);
+                return RedirectToAction("TicketAssignment", new { id = id });
             }
         }
 

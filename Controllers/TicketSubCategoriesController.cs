@@ -147,8 +147,6 @@ namespace TechSupportXPress.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
-            {
                 try
                 {
                     var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -187,9 +185,6 @@ namespace TechSupportXPress.Controllers
                     }
                 }
                 return RedirectToAction(nameof(Index));
-            }
-
-            return View(ticketSubCategory);
         }
 
         // GET: TicketSubCategories/Delete/5

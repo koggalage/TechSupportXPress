@@ -129,8 +129,6 @@ namespace TechSupportXPress.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
-            {
                 try
                 {
                     _context.Update(comment);
@@ -151,10 +149,6 @@ namespace TechSupportXPress.Controllers
                     }
                 }
                 return RedirectToAction(nameof(Index));
-            }
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName", comment.CreatedById);
-            ViewData["TicketId"] = new SelectList(_context.Tickets, "Id", "Title", comment.TicketId);
-            return View(comment);
         }
 
         // GET: Comments/Delete/5
