@@ -1,0 +1,19 @@
+﻿@model TechSupportXPress.ViewModels.UserProfileViewModel
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="card rounded-4 mt-3">
+    <div class="card-body">
+        <h4 class="mb-3">User Profile</h4>
+        <table class="table table-bordered">
+            <tr><th>Full Name</th><td>@Model.FullName</td></tr>
+            <tr><th>Username</th><td>@Model.UserName</td></tr>
+            <tr><th>Email</th><td>@Model.Email</td></tr>
+            <tr><th>Phone</th><td>@Model.PhoneNumber</td></tr>
+            <tr><th>Gender</th><td>@Model.Gender</td></tr>
+            <tr><th>Roles</th><td>@string.Join(", ", Model.Roles)</td></tr>
+        </table>
+    </div>
+</div>

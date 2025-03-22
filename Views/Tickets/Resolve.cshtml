@@ -1,4 +1,5 @@
 ﻿@model TechSupportXPress.ViewModels.TicketViewModel
+@using TechSupportXPress.Resources
 
 @{
     ViewData["Title"] = "Details";
@@ -172,27 +173,78 @@
                         }
                     </tbody>
                 </table>
-                @if ((@Model.TicketDetails.Status.Code != "Resolved") && (@Model.TicketDetails.Status.Code != "Closed"))
+                @if (@Model.TicketDetails.Status.Code == "Assigned")
                 {
-                    <form asp-action="ResolvedConfirmed" method="post" enctype="multipart/form-data">
-                        <input type="hidden" class="hidden" asp-for="Id" />
-                        <div class="row">
-                            <label class="control-label">Ticket Status</label>
-                            <select asp-for="StatusId" class="form-control" asp-items="ViewBag.StatusId"></select>
-                        </div>
-                        <div class="row">
-                            <label class="control-label">New Ticket Resolution Comment</label>
-                            <textarea asp-for="CommentDescription" type="text" class="form-control-lg"></textarea>
-                        </div>
-                        <button class="btn btn-primary float-end mt-5">Add Resolution Status</button>
-                    </form>
+                    @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_SUPPORT))
+                    {
+                        <form asp-action="ResolvedConfirmed" method="post" enctype="multipart/form-data">
+                            <input type="hidden" class="hidden" asp-for="Id" />
+                            <input type="hidden" name="StatusId" value="@ViewBag.NextStatusId" />
+                            <div class="row mb-3">
+                                <label class="control-label">Next Ticket Status</label>
+                                <input class="form-control" value="@ViewBag.NextStatus" readonly />
+                            </div>
+                           @*  <div class="row">
+                                <label class="control-label">Ticket Status</label>
+                                <select asp-for="StatusId" class="form-control" asp-items="ViewBag.StatusId"></select>
+                            </div> *@
+                            <div class="row">
+                                <label class="control-label">Comment</label>
+                                <textarea asp-for="CommentDescription" type="text" class="form-control-lg"></textarea>
+                            </div>
+                            <button class="btn btn-primary float-end mt-5">Resolve Ticket</button>
+                        </form>
+                    }
                 }
+
                 @if (@Model.TicketDetails.Status.Code == "Resolved")
                 {
-                    <form asp-action="ClosedConfirmed" method="post" enctype="multipart/form-data">
-                        <input type="hidden" class="hidden" asp-for="Id" />
-                        <button class="btn btn-primary float-end mt-5">Close Ticket</button>
-                    </form>
+                    @if (User.IsInRole(Constants.ROLE_ADMIN))
+                    {
+                        <form asp-action="ClosedConfirmed" method="post" enctype="multipart/form-data">
+                            <input type="hidden" class="hidden" asp-for="Id" />
+                            <input type="hidden" name="StatusId" value="@ViewBag.NextStatusId" />
+                            <div class="row mb-3">
+                                <label class="control-label">Next Ticket Status</label>
+                                <input class="form-control" value="@ViewBag.NextStatus" readonly />
+                            </div>
+                            @* <div class="row">
+                                <label class="control-label">Ticket Status</label>
+                                <select asp-for="StatusId" class="form-control" asp-items="ViewBag.StatusId"></select>
+                            </div> *@
+                            <div class="row">
+                                <label class="control-label">Comment</label>
+                                <textarea asp-for="CommentDescription" type="text" class="form-control-lg"></textarea>
+                            </div>
+                            <button class="btn btn-primary float-end mt-5">Close Ticket</button>
+                        </form>
+                    }
+                    
+                }
+
+                @if (@Model.TicketDetails.Status.Code == "Closed")
+                {
+                    @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_USER))
+                    {
+                        <form asp-action="ReOpenConfirmed" method="post" enctype="multipart/form-data">
+                            <input type="hidden" class="hidden" asp-for="Id" />
+                            <input type="hidden" name="StatusId" value="@ViewBag.NextStatusId" />
+                            <div class="row mb-3">
+                                <label class="control-label">Next Ticket Status</label>
+                                <input class="form-control" value="@ViewBag.NextStatus" readonly />
+                            </div>
+                           @*  <div class="row">
+                                <label class="control-label">Ticket Status</label>
+                                <select asp-for="StatusId" class="form-control" asp-items="ViewBag.StatusId"></select>
+                            </div> *@
+                            <div class="row">
+                                <label class="control-label">Comment</label>
+                                <textarea asp-for="CommentDescription" type="text" class="form-control-lg"></textarea>
+                            </div>
+                            <button class="btn btn-primary float-end mt-5">Re-Open Ticket</button>
+                        </form>
+                    }
+
                 }
             </div>
         </div>

@@ -2,7 +2,8 @@
 // Preloader
 $(window).on("load", function () {
     //console.log("system js on load");
-    $(".loader").fadeOut("slow");
+    $(".loader").fadeOut("fast");
+    $("#spin").remove();
 });
 $(document).on("change", "#CategoryId.get-subcategories", function (e) {
     //console.log("system js on change");
@@ -24,6 +25,7 @@ $(document).on("change", "#CategoryId.get-subcategories", function (e) {
                 console.log(data);
                 $(data).map(function () {
                     $("#SubCategoryId").append($('<option></option>').val(this.id).html(this.name));
+                    $("#spin").remove();
                 });
             },
             error: function (xhr, ajaxOptions, thrownError) {

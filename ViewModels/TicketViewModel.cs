@@ -61,5 +61,7 @@ namespace TechSupportXPress.ViewModels
         [DisplayName("Ticket Category")]
         public int TicketCategoryId { get; set; }
 
+        public string NextStatus { get; set; }
+
     }
 }

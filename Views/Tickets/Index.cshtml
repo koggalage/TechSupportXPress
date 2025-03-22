@@ -1,4 +1,5 @@
 ﻿@model TechSupportXPress.ViewModels.TicketViewModel
+@using TechSupportXPress.Resources
 
 @{
     ViewData["Title"] = "Index";
@@ -67,13 +68,14 @@
     <div class="card-body">
         <div class="d-flex align-items-center">
         </div>
-        @* @if (canCreateTicket)
-        { *@
+        
+        @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_USER))
+        {
             <p>
                 <a asp-action="Create" class="btn btn-primary"> Add New Ticket</a>
-
             </p>
-        @* } *@
+        }
+       
         <div class="">
             <table id="example" class="table table-striped table-bordered" style="width:100%">
                 <thead>
@@ -186,16 +188,41 @@
                                             <div class="dropdown-divider"></div>
                                             <a class="dropdown-item" asp-action="Edit" asp-route-id="@item.Id">Edit</a>
                                             <div class="dropdown-divider"></div>
-                                            @if (item.Status.Code != "Resolved" && item.Status.Code != "Closed")
+
+                                            @if (item.Status.Code == "Pending" || item.Status.Code == "ReOpened")
                                             {
-                                                <a class="dropdown-item" asp-action="TicketAssignment" asp-route-id="@item.Id">Assign</a>
-                                                <div class="dropdown-divider"></div>
-                                                <a class="dropdown-item" asp-action="Resolve" asp-route-id="@item.Id">Resolve</a>
+                                                @if (User.IsInRole(Constants.ROLE_ADMIN))
+                                                {
+                                                    <a class="dropdown-item" asp-action="TicketAssignment" asp-route-id="@item.Id">Assign</a>
+
+                                                    <div class="dropdown-divider"></div>
+                                                }
                                             }
-                                            else
+
+                                            @if (item.Status.Code == "Assigned")
                                             {
-                                                <a class="dropdown-item" asp-action="ReOpen" asp-route-id="@item.Id">Re-Open</a>
-                                                <div class="dropdown-divider"></div>
+                                                @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_SUPPORT))
+                                                {
+                                                    <a class="dropdown-item" asp-action="Resolve" asp-route-id="@item.Id">Resolve</a>
+                                                }
+                                            }
+
+                                            @if (item.Status.Code == "Resolved")
+                                            {
+                                                @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_USER))
+                                                {
+                                                    <a class="dropdown-item" asp-action="Resolve" asp-route-id="@item.Id">Close</a>
+                                                    <div class="dropdown-divider"></div>
+                                                }
+                                            }
+
+                                            @if (item.Status.Code == "Closed")
+                                            {
+                                                @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_USER))
+                                                {
+                                                    <a class="dropdown-item" asp-action="Resolve" asp-route-id="@item.Id">Re-Open</a>
+                                                    <div class="dropdown-divider"></div>
+                                                }
                                             }
 
                                         </div>

@@ -1,25 +1,20 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
+@using TechSupportXPress.Resources
+@using TechSupportXPress.Models
+
 @* @if (User.Identity.IsAuthenticated) *@
 @* { *@
-   @*  var allUserPermissions = User.FindFirst("UserPermission")?.Value ?? "";
-    var canViewTicket = allUserPermissions.Contains("|TICKETS:VIEW");
-    var canViewComments = allUserPermissions.Contains("|COMMENTS:VIEW");
-    var canViewCategories = allUserPermissions.Contains("|CATEGORIES:VIEW");
-    var canViewSubCategories = allUserPermissions.Contains("|SUBCATEGORIES:VIEW");
-    var canViewAudits = allUserPermissions.Contains("|AUDIT:VIEW");
-    var canViewUsers = allUserPermissions.Contains("|USERS:VIEW");
-    var canViewSystemCodes = allUserPermissions.Contains("|SYSTEMCODES:VIEW");
-    var canViewSystemCodeDetails = allUserPermissions.Contains("|SYSTEMCODEDETAILS:VIEW");
-    var canViewRoles = allUserPermissions.Contains("|ROLES:VIEW");
-    var canViewDepartments = allUserPermissions.Contains("|DEPARTMENTS:VIEW");
-    var canViewSystemTasks = allUserPermissions.Contains("|SYSTEMTASKS:VIEW");
-    var canViewDashboard = allUserPermissions.Contains("|DASHBOARD:VIEW");
-    var canViewUserProfiles = allUserPermissions.Contains("|USERPROFILE:VIEW");
-    var canViewSystemSettings = allUserPermissions.Contains("|SYSTEMSETTINGS:VIEW");
-    var canViewCountries = allUserPermissions.Contains("|COUNTRIES:VIEW");
-    var canViewCities = allUserPermissions.Contains("|CITIES:VIEW"); *@
+   
+@{
+    var user = await UserManager.GetUserAsync(User);
+    var roles = await UserManager.GetRolesAsync(user);
+    var roleName = roles.FirstOrDefault() ?? "User";
+}
+
+
+
 
     <!doctype html>
     <html lang="en" class="semi-dark">
@@ -57,7 +52,7 @@
     </head>
 
     <body>
-        <div class="loader" style="background: url('~/assets/images/loader.gif') 50% 50% no-repeat var(--colorBackground);"></div>
+        @* <div class="loader" style="background: url('~/assets/images/loader.gif') 50% 50% no-repeat var(--colorBackground);"></div> *@
         <div class="wrapper">
             <header class="top-header">
                 <nav class="navbar navbar-expand gap-3" style="background-image: linear-gradient(180deg, rgb(4, 39, 103) 0%, #3a0647 70%) !important;">
@@ -76,7 +71,7 @@
                                     </div>
                                 </a>
                             </li>
-                            <li class="nav-item dropdown dropdown-laungauge d-none d-sm-flex">
+                            @* <li class="nav-item dropdown dropdown-laungauge d-none d-sm-flex">
                                 <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="javascript:;" data-bs-toggle="dropdown">
                                     <img src="~/assets/images/county/02.png" width="22" alt="">
                                 </a>
@@ -85,7 +80,7 @@
                                         <a class="dropdown-item d-flex align-items-center py-2" href="javascript:;"><img src="~/assets/images/county/01.png" width="20" alt=""><span class="ms-2">Kenya</span></a>
                                     </li>
                                 </ul>
-                            </li>
+                            </li> *@
                             <li class="nav-item dark-mode d-none d-sm-flex">
                                 <a class="nav-link dark-mode-icon" href="javascript:;">
                                     <div class="">
@@ -93,7 +88,7 @@
                                     </div>
                                 </a>
                             </li>
-                            <li class="nav-item dropdown dropdown-large">
+                            @* <li class="nav-item dropdown dropdown-large">
                                 <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown">
                                     <div class="messages">
                                         <span class="notify-badge">5</span>
@@ -131,8 +126,8 @@
                                         </a>
                                     </div>
                                 </div>
-                            </li>
-                            <li class="nav-item dropdown dropdown-large">
+                            </li> *@
+                           @*  <li class="nav-item dropdown dropdown-large">
                                 <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown">
                                     <div class="notifications">
                                         <span class="notify-badge">8</span>
@@ -171,45 +166,46 @@
                                         </a>
                                     </div>
                                 </div>
-                            </li>
+                            </li> *@
                         </ul>
                     </div>
+                   
                     <div class="dropdown dropdown-user-setting">
-                        <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown">
-                            <div class="user-setting d-flex align-items-center gap-3" style="background-color:#3a0647 !important">
-                                <img src="~/assets/images/avatars/avatar-1.png" class="user-img" alt="">
-                                <div class="d-none d-sm-block">
-                                    <p class="user-name mb-0">@User.Identity?.Name!</p>
-                                    <small class="mb-0 dropdown-user-designation">Admin</small>
-                                </div>
-                            </div>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <a class="dropdown-item" href="">
-                                    <div class="d-flex align-items-center">
-                                        <div class=""><i class="bi bi-person-fill"></i></div>
-                                        <div class="ms-3"><span>Profile</span></div>
-                                    </div>
-                                </a>
-                            </li>
+    <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown">
+        <div class="user-setting d-flex align-items-center gap-3" style="background-color:#3a0647 !important">
+            <img src="~/assets/images/avatars/avatar-1.png" class="user-img" alt="">
+            <div class="d-none d-sm-block text-white">
+                <p class="user-name mb-0">@user?.FullName</p>
+                <small class="mb-0 dropdown-user-designation">@roleName</small>
+            </div>
+        </div>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li>
+            <a class="dropdown-item" asp-controller="Users" asp-action="Profile">
+                <div class="d-flex align-items-center">
+                    <div><i class="bi bi-person-fill"></i></div>
+                    <div class="ms-3"><span>Profile</span></div>
+                </div>
+            </a>
+        </li>
 
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="authentication-signup-with-header-footer.html">
-                                    <div class="d-flex align-items-center">
-                                        <div class=""><i class="bi bi-lock-fill"></i></div>
-                                        <div class="ms-3">
-                                            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-                                                <button type="submit" class="nav-link btn btn-link text-dark">Logout</button>
-                                            </form>
+        <li><hr class="dropdown-divider"></li>
 
-                                        </div>
-                                    </div>
-                                </a>
-                            </li>
-                        </ul>
+        <li>
+            <form class="dropdown-item m-0 p-0" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                <button type="submit" class="dropdown-item">
+                    <div class="d-flex align-items-center">
+                        <div><i class="bi bi-box-arrow-right"></i></div>
+                        <div class="ms-3"><span>Logout</span></div>
                     </div>
+                </button>
+            </form>
+        </li>
+    </ul>
+</div>
+
+
                 </nav>
             </header>
             <!--end top header-->
@@ -269,38 +265,49 @@
                     @* } *@
                     @* @if (canViewCategories) *@
                     @* {  *@
-                        <li>
-                            <a asp-action="Index" asp-controller="TicketCategories">
-                                <div class="parent-icon">
-                                    <i class="bi bi-droplet-fill"></i>
-                                </div>
-                                <div class="menu-title">Ticket Categories</div>
-                            </a>
-                        </li> 
+
+                @if (User.IsInRole(Constants.ROLE_ADMIN))
+                {
+                    <li>
+                        <a asp-action="Index" asp-controller="TicketCategories">
+                            <div class="parent-icon">
+                                <i class="bi bi-droplet-fill"></i>
+                            </div>
+                            <div class="menu-title">Ticket Categories</div>
+                        </a>
+                    </li>
+                }
+               
                     @* } *@
 
                     @* @if (canViewSubCategories) *@
                 @*  {*@
-                        <li>
-                            <a asp-action="Index" asp-controller="TicketSubCategories">
-                                <div class="parent-icon">
-                                    <i class="bi bi-droplet-fill"></i>
-                                </div>
-                                <div class="menu-title">Ticket Sub-Categories</div>
-                            </a>
-                        </li>
-                @*}*@
-                    @* @if (canViewAudits) *@
-                    @* { *@
-                        <li>
-                            <a asp-action="Index" asp-controller="AuditTrails">
-                                <div class="parent-icon">
-                                    <i class="bi bi-basket2-fill"></i>
-                                </div>
-                                <div class="menu-title">Audit Trails</div>
-                            </a>
-                        </li>
-                    @* } *@
+
+                @* @if (User.IsInRole(Constants.ROLE_ADMIN))
+                {
+                    <li>
+                        <a asp-action="Index" asp-controller="TicketSubCategories">
+                            <div class="parent-icon">
+                                <i class="bi bi-droplet-fill"></i>
+                            </div>
+                            <div class="menu-title">Ticket Sub-Categories</div>
+                        </a>
+                    </li>
+                } *@
+                
+                @if (User.IsInRole(Constants.ROLE_ADMIN))
+                {
+                    <li>
+                        <a asp-action="Index" asp-controller="AuditTrails">
+                            <div class="parent-icon">
+                                <i class="bi bi-basket2-fill"></i>
+                            </div>
+                            <div class="menu-title">Audit Trails</div>
+                        </a>
+                    </li>
+                }
+                
+                 
 
                    @*  <li>
                         <a asp-action="Index" asp-controller="ErrorLogs">
@@ -310,61 +317,85 @@
                             <div class="menu-title">Error Logs</div>
                         </a>
                     </li> *@
-                    @* @if (canViewUsers) *@
-                    @* { *@
-                        <li>
-                            <a asp-action="Index" asp-controller="Users">
-                                <div class="parent-icon">
-                                    <i class="bi bi-person-lines-fill"></i>
-                                </div>
-                                <div class="menu-title">System Users</div>
-                            </a>
-                        </li>
-                    @* } *@
-                    @* @if (canViewSystemCodes) *@
-                    @* { *@
-                       <li>
-                            <a asp-action="Index" asp-controller="SystemCodes">
-                                <div class="parent-icon">
-                                    <i class="bi bi-person-lines-fill"></i>
-                                </div>
-                                <div class="menu-title">System Codes</div>
-                            </a>
-                        </li>
+
+                @if (User.IsInRole(Constants.ROLE_ADMIN))
+                {
+                    <li>
+                        <a asp-action="Index" asp-controller="Users">
+                            <div class="parent-icon">
+                                <i class="bi bi-person-lines-fill"></i>
+                            </div>
+                            <div class="menu-title">System Users</div>
+                        </a>
+                    </li>
+                }
+
+                @if (User.IsInRole(Constants.ROLE_ADMIN))
+                {
+                    <li>
+                        <a asp-action="Index" asp-controller="SystemCodes">
+                            <div class="parent-icon">
+                                <i class="bi bi-person-lines-fill"></i>
+                            </div>
+                            <div class="menu-title">System Codes</div>
+                        </a>
+                    </li>
+                }
+               
                    @*  }
                     @if (canViewSystemCodeDetails)
                     { *@
-                       <li>
-                            <a asp-action="Index" asp-controller="SystemCodeDetails">
-                                <div class="parent-icon">
-                                    <i class="bi bi-person-lines-fill"></i>
-                                </div>
-                                <div class="menu-title">System Code Details</div>
-                            </a>
-                        </li>
+
+                @if (User.IsInRole(Constants.ROLE_ADMIN))
+                {
+                    <li>
+                        <a asp-action="Index" asp-controller="SystemCodeDetails">
+                            <div class="parent-icon">
+                                <i class="bi bi-person-lines-fill"></i>
+                            </div>
+                            <div class="menu-title">System Code Details</div>
+                        </a>
+                    </li>
+                }
+               
                     @* }
                     @if (canViewRoles)
                     { *@
-                       <li>
-                            <a asp-action="Index" asp-controller="Roles">
-                                <div class="parent-icon">
-                                    <i class="bi bi-person-lines-fill"></i>
-                                </div>
-                                <div class="menu-title">System Roles</div>
-                            </a>
-                        </li>
+
+                @if (User.IsInRole(Constants.ROLE_ADMIN))
+                {
+                    <li>
+                        <a asp-action="Index" asp-controller="Roles">
+                            <div class="parent-icon">
+                                <i class="bi bi-person-lines-fill"></i>
+                            </div>
+                            <div class="menu-title">System Roles</div>
+                        </a>
+                    </li>
+                }
+
+                <li>
+                    <a asp-action="Profile" asp-controller="Users">
+                        <div class="parent-icon">
+                            <i class="bi bi-person-lines-fill"></i>
+                        </div>
+                        <div class="menu-title">User Profile</div>
+                    </a>
+                </li>
+
+                
                    @*  }
 
                     @if (canViewDepartments)
                     { *@
-                       <li>
+                       @* <li>
                             <a asp-action="Index" asp-controller="Departments">
                                 <div class="parent-icon">
                                     <i class="bi bi-person-lines-fill"></i>
                                 </div>
                                 <div class="menu-title">Departments</div>
                             </a>
-                        </li>
+                        </li> *@
                     @* }
 
                     @if (canViewTicket)
@@ -424,7 +455,7 @@
                             </a>
                         </li> *@
                     @* } *@
-                <li>
+               @*  <li>
                     <a href="#" onclick="document.getElementById('logout-form').submit(); return false;">
                         <div class="parent-icon">
                             <i class="bi bi-lock-fill"></i>
@@ -434,7 +465,7 @@
 
                     <form id="logout-form" class="d-none" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post">
                     </form>
-                </li>
+                </li> *@
                 </ul>
                 <!--end navigation-->
             </aside>
@@ -491,6 +522,7 @@
         <a href="javaScript:;" class="back-to-top"><i class='bx bxs-up-arrow-alt'></i></a>
         <!--End Back To Top Button-->
         <!--end wrapper-->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="~/font-awesome/js/all.js"></script>
         <script src="~/font-awesome/js/fontawesome.js"></script>
         <script src="~/assets/js/bootstrap.bundle.min.js"></script>
@@ -516,6 +548,8 @@
         <script src="~/CustomJs/TicketSystem.js" asp-append-version="true"></script>
         <script src="~/assets/plugins/select2/js/select2.min.js"></script>
         <script src="~/assets/js/form-select2.js"></script>
+       
+
         <script type="text/javascript">
             $('.single-select').select2({
                 theme: 'bootstrap4',
