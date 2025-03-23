@@ -161,9 +161,25 @@ namespace TechSupportXPress.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
+                    user.EmailConfirmed = true;
+                    await _userManager.UpdateAsync(user);
+
                     _logger.LogInformation("User created a new account with password.");
 
                     await _userManager.AddToRoleAsync(user, "USER");
+
+                    var verifiedEmails = new List<string>() { "tpkoggalage@gmail.com" };
+
+                    if (verifiedEmails.Contains(Input.Email))
+                    {
+                        // Send Welcome Email
+                        await _emailSender.SendEmailAsync(Input.Email,
+                            "Welcome to TechSupportXPress!",
+                            $"<p>Hi {Input.FirstName},</p>" +
+                            "<p>Welcome to <strong>TechSupportXPress</strong>! We're excited to have you with us.</p>" +
+                            "<p>You can now start submitting support tickets and track their progress.</p>" +
+                            "<br /><p>Cheers,<br />The TechSupportXPress Team</p>");
+                    }
 
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);

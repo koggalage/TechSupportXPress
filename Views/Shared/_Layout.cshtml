@@ -9,7 +9,7 @@
 
 @{
     var user = await UserManager.GetUserAsync(User);
-    var roles = await UserManager.GetRolesAsync(user);
+    var roles = user != null ? await UserManager.GetRolesAsync(user) : new List<string>();
     var roleName = roles.FirstOrDefault() ?? "User";
 }
 
@@ -18,6 +18,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+
     <link rel="icon" href="~/assets/images/favicon-32x32.png" type="image/png" />
     <link href="~/assets/plugins/vectormap/jquery-jvectormap-2.0.2.css" rel="stylesheet" />
     <link href="~/assets/plugins/simplebar/css/simplebar.css" rel="stylesheet" />
@@ -190,15 +196,17 @@
                         <li><hr class="dropdown-divider"></li>
 
                         <li>
-                            <form class="dropdown-item m-0 p-0" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-                                <button type="submit" class="dropdown-item">
+                            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post" class="d-inline">
+                                <button type="submit" class="dropdown-item w-100 text-start">
                                     <div class="d-flex align-items-center">
-                                        <div><i class="bi bi-box-arrow-right"></i></div>
-                                        <div class="ms-3"><span>Logout</span></div>
+                                        <i class="bi bi-box-arrow-right"></i>
+                                        <span class="ms-2">Logout</span>
                                     </div>
                                 </button>
                             </form>
                         </li>
+
+
                     </ul>
                 </div>
 
@@ -220,83 +228,85 @@
                 </div>
             </div>
             <!--navigation-->
-            <ul class="metismenu" id="menu">
-                @* @if (canViewDashboard) *@
-                @* { *@
-                <li>
-                    <a asp-action="Index" asp-controller="Home">
-                        <div class="parent-icon">
-                            <i class="bi bi-house-fill"></i>
-                        </div>
-                        <div class="menu-title">Dashboard</div>
-                    </a>
-                </li>
-                @* } *@
-                @* @if (canViewTicket) *@
-                @* { *@
-                <li>
-                    <a href="javascript:;" class="has-arrow">
-                        <div class="parent-icon">
-                            <i class="bi bi-grid-fill"></i>
-                        </div>
-                        <div class="menu-title">Tickets</div>
-                    </a>
-                    <ul>
-                        @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_USER))
-                        {
-                            <li>
-                                <a asp-action="Create" asp-controller="Tickets"><i class="bi bi-circle"></i> Add New Ticket</a>
-                            </li>
-                        }
-
-                        <li>
-                            <a asp-action="Index" asp-controller="Tickets"><i class="bi bi-circle"></i> Recent Tickets</a>
-                        </li>
-                        <li>
-                            <a asp-action="AssignedTickets" asp-controller="Tickets"><i class="bi bi-circle"></i> Assigned Tickets</a>
-                        </li>
-                        <li>
-                            <a asp-action="ResolvedTickets" asp-controller="Tickets"><i class="bi bi-circle"></i> Resolved Tickets</a>
-                        </li>
-                        <li>
-                            <a asp-action="ClosedTickets" asp-controller="Tickets"><i class="bi bi-circle"></i> Closed Tickets</a>
-                        </li>
-                    </ul>
-
-                </li>
-                @* } *@
-                @* @if (canViewComments) *@
-                @* { *@
-                <li>
-                    <a asp-action="Index" asp-controller="Comments">
-                        <div class="parent-icon">
-                            <i class="bi bi-droplet-fill"></i>
-                        </div>
-                        <div class="menu-title">Ticket Comments</div>
-                    </a>
-                </li>
-                @* } *@
-                @* @if (canViewCategories) *@
-                @* {  *@
-
-                @if (User.IsInRole(Constants.ROLE_ADMIN))
-                {
+            @if (SignInManager.IsSignedIn(User))
+            {
+                <ul class="metismenu" id="menu">
+                    @* @if (canViewDashboard) *@
+                    @* { *@
                     <li>
-                        <a asp-action="Index" asp-controller="TicketCategories">
+                        <a asp-action="Index" asp-controller="Home">
+                            <div class="parent-icon">
+                                <i class="bi bi-house-fill"></i>
+                            </div>
+                            <div class="menu-title">Dashboard</div>
+                        </a>
+                    </li>
+                    @* } *@
+                    @* @if (canViewTicket) *@
+                    @* { *@
+                    <li>
+                        <a href="javascript:;" class="has-arrow">
+                            <div class="parent-icon">
+                                <i class="bi bi-grid-fill"></i>
+                            </div>
+                            <div class="menu-title">Tickets</div>
+                        </a>
+                        <ul>
+                            @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_USER))
+                            {
+                                <li>
+                                    <a asp-action="Create" asp-controller="Tickets"><i class="bi bi-circle"></i> Add New Ticket</a>
+                                </li>
+                            }
+
+                            <li>
+                                <a asp-action="Index" asp-controller="Tickets"><i class="bi bi-circle"></i> Recent Tickets</a>
+                            </li>
+                            <li>
+                                <a asp-action="AssignedTickets" asp-controller="Tickets"><i class="bi bi-circle"></i> Assigned Tickets</a>
+                            </li>
+                            <li>
+                                <a asp-action="ResolvedTickets" asp-controller="Tickets"><i class="bi bi-circle"></i> Resolved Tickets</a>
+                            </li>
+                            <li>
+                                <a asp-action="ClosedTickets" asp-controller="Tickets"><i class="bi bi-circle"></i> Closed Tickets</a>
+                            </li>
+                        </ul>
+
+                    </li>
+                    @* } *@
+                    @* @if (canViewComments) *@
+                    @* { *@
+                    <li>
+                        <a asp-action="Index" asp-controller="Comments">
                             <div class="parent-icon">
                                 <i class="bi bi-droplet-fill"></i>
                             </div>
-                            <div class="menu-title">Ticket Categories</div>
+                            <div class="menu-title">Ticket Comments</div>
                         </a>
                     </li>
-                }
+                    @* } *@
+                    @* @if (canViewCategories) *@
+                    @* {  *@
 
-                @* } *@
+                    @if (User.IsInRole(Constants.ROLE_ADMIN))
+                    {
+                        <li>
+                            <a asp-action="Index" asp-controller="TicketCategories">
+                                <div class="parent-icon">
+                                    <i class="bi bi-droplet-fill"></i>
+                                </div>
+                                <div class="menu-title">Ticket Categories</div>
+                            </a>
+                        </li>
+                    }
 
-                @* @if (canViewSubCategories) *@
-                @*  {*@
+                    @* } *@
 
-                @* @if (User.IsInRole(Constants.ROLE_ADMIN))
+                    @* @if (canViewSubCategories) *@
+                    @*  {*@
+
+                    @* @if (User.IsInRole(Constants.ROLE_ADMIN))
                 {
                 <li>
                 <a asp-action="Index" asp-controller="TicketSubCategories">
@@ -308,21 +318,21 @@
                 </li>
                 } *@
 
-                @if (User.IsInRole(Constants.ROLE_ADMIN))
-                {
-                    <li>
-                        <a asp-action="Index" asp-controller="AuditTrails">
-                            <div class="parent-icon">
-                                <i class="bi bi-basket2-fill"></i>
-                            </div>
-                            <div class="menu-title">Audit Trails</div>
-                        </a>
-                    </li>
-                }
+                    @if (User.IsInRole(Constants.ROLE_ADMIN))
+                    {
+                        <li>
+                            <a asp-action="Index" asp-controller="AuditTrails">
+                                <div class="parent-icon">
+                                    <i class="bi bi-basket2-fill"></i>
+                                </div>
+                                <div class="menu-title">Audit Trails</div>
+                            </a>
+                        </li>
+                    }
 
 
 
-                @*  <li>
+                    @*  <li>
                 <a asp-action="Index" asp-controller="ErrorLogs">
                 <div class="parent-icon">
                 <i class="bi bi-file-earmark-break-fill"></i>
@@ -331,77 +341,77 @@
                 </a>
                 </li> *@
 
-                @if (User.IsInRole(Constants.ROLE_ADMIN))
-                {
-                    <li>
-                        <a asp-action="Index" asp-controller="Users">
-                            <div class="parent-icon">
-                                <i class="bi bi-person-lines-fill"></i>
-                            </div>
-                            <div class="menu-title">System Users</div>
-                        </a>
-                    </li>
-                }
+                    @if (User.IsInRole(Constants.ROLE_ADMIN))
+                    {
+                        <li>
+                            <a asp-action="Index" asp-controller="Users">
+                                <div class="parent-icon">
+                                    <i class="bi bi-person-lines-fill"></i>
+                                </div>
+                                <div class="menu-title">System Users</div>
+                            </a>
+                        </li>
+                    }
 
-                @if (User.IsInRole(Constants.ROLE_ADMIN))
-                {
-                    <li>
-                        <a asp-action="Index" asp-controller="SystemCodes">
-                            <div class="parent-icon">
-                                <i class="bi bi-person-lines-fill"></i>
-                            </div>
-                            <div class="menu-title">System Codes</div>
-                        </a>
-                    </li>
-                }
+                    @if (User.IsInRole(Constants.ROLE_ADMIN))
+                    {
+                        <li>
+                            <a asp-action="Index" asp-controller="SystemCodes">
+                                <div class="parent-icon">
+                                    <i class="bi bi-person-lines-fill"></i>
+                                </div>
+                                <div class="menu-title">System Codes</div>
+                            </a>
+                        </li>
+                    }
 
-                @*  }
+                    @*  }
                 @if (canViewSystemCodeDetails)
                 { *@
 
-                @if (User.IsInRole(Constants.ROLE_ADMIN))
-                {
-                    <li>
-                        <a asp-action="Index" asp-controller="SystemCodeDetails">
-                            <div class="parent-icon">
-                                <i class="bi bi-person-lines-fill"></i>
-                            </div>
-                            <div class="menu-title">System Code Details</div>
-                        </a>
-                    </li>
-                }
+                    @if (User.IsInRole(Constants.ROLE_ADMIN))
+                    {
+                        <li>
+                            <a asp-action="Index" asp-controller="SystemCodeDetails">
+                                <div class="parent-icon">
+                                    <i class="bi bi-person-lines-fill"></i>
+                                </div>
+                                <div class="menu-title">System Code Details</div>
+                            </a>
+                        </li>
+                    }
 
-                @* }
+                    @* }
                 @if (canViewRoles)
                 { *@
 
-                @if (User.IsInRole(Constants.ROLE_ADMIN))
-                {
+                    @if (User.IsInRole(Constants.ROLE_ADMIN))
+                    {
+                        <li>
+                            <a asp-action="Index" asp-controller="Roles">
+                                <div class="parent-icon">
+                                    <i class="bi bi-person-lines-fill"></i>
+                                </div>
+                                <div class="menu-title">System Roles</div>
+                            </a>
+                        </li>
+                    }
+
                     <li>
-                        <a asp-action="Index" asp-controller="Roles">
+                        <a asp-action="Profile" asp-controller="Users">
                             <div class="parent-icon">
                                 <i class="bi bi-person-lines-fill"></i>
                             </div>
-                            <div class="menu-title">System Roles</div>
+                            <div class="menu-title">User Profile</div>
                         </a>
                     </li>
-                }
-
-                <li>
-                    <a asp-action="Profile" asp-controller="Users">
-                        <div class="parent-icon">
-                            <i class="bi bi-person-lines-fill"></i>
-                        </div>
-                        <div class="menu-title">User Profile</div>
-                    </a>
-                </li>
 
 
-                @*  }
+                    @*  }
 
                 @if (canViewDepartments)
                 { *@
-                @* <li>
+                    @* <li>
                 <a asp-action="Index" asp-controller="Departments">
                 <div class="parent-icon">
                 <i class="bi bi-person-lines-fill"></i>
@@ -409,11 +419,11 @@
                 <div class="menu-title">Departments</div>
                 </a>
                 </li> *@
-                @* }
+                    @* }
 
                 @if (canViewTicket)
                 { *@
-                @*  <li>
+                    @*  <li>
                 <a asp-action="Index" asp-controller="SystemTasks">
                 <div class="parent-icon">
                 <i class="bi bi-person-lines-fill"></i>
@@ -421,10 +431,10 @@
                 <div class="menu-title">System Tasks</div>
                 </a>
                 </li> *@
-                @* }
+                    @* }
                 @if (canViewUserProfiles)
                 { *@
-                @*  <li>
+                    @*  <li>
                 <a asp-action="Index" asp-controller="UserRoleProfiles">
                 <div class="parent-icon">
                 <i class="bi bi-person-lines-fill"></i>
@@ -432,11 +442,11 @@
                 <div class="menu-title">User Profiles</div>
                 </a>
                 </li> *@
-                @* }
+                    @* }
 
                 @if (canViewSystemSettings)
                 { *@
-                @*  <li>
+                    @*  <li>
                 <a asp-action="Index" asp-controller="SystemSettings">
                 <div class="parent-icon">
                 <i class="bi  bi-lock-fill"></i>
@@ -444,11 +454,11 @@
                 <div class="menu-title">System Settings</div>
                 </a>
                 </li> *@
-                @* }
+                    @* }
 
                 @if (canViewCountries)
                 { *@
-                @*  <li>
+                    @*  <li>
                 <a asp-action="Index" asp-controller="Countries">
                 <div class="parent-icon">
                 <i class="bi  bi-lock-fill"></i>
@@ -456,10 +466,10 @@
                 <div class="menu-title">Countries</div>
                 </a>
                 </li> *@
-                @* }
+                    @* }
                 @if (canViewCities)
                 { *@
-                @* <li>
+                    @* <li>
                 <a asp-action="Index" asp-controller="Cities">
                 <div class="parent-icon">
                 <i class="bi  bi-lock-fill"></i>
@@ -467,8 +477,8 @@
                 <div class="menu-title">Cities</div>
                 </a>
                 </li> *@
-                @* } *@
-                @*  <li>
+                    @* } *@
+                    @*  <li>
                 <a href="#" onclick="document.getElementById('logout-form').submit(); return false;">
                 <div class="parent-icon">
                 <i class="bi bi-lock-fill"></i>
@@ -479,7 +489,8 @@
                 <form id="logout-form" class="d-none" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post">
                 </form>
                 </li> *@
-            </ul>
+                </ul>
+            }
             <!--end navigation-->
         </aside>
         <!--end sidebar -->

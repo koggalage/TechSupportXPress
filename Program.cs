@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using TechSupportXPress.Brokers;
 using TechSupportXPress.Data;
 using TechSupportXPress.Models;
 
@@ -19,6 +21,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders()
     .AddDefaultUI();
+
+builder.Services.AddTransient<IEmailSender, SESEmailSender>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();

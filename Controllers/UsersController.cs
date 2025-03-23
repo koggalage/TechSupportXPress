@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -26,6 +27,14 @@ namespace TechSupportXPress.Controllers
             _signInManager = signInManager;
             _userManager = userManager;
             _context = context;
+        }
+
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
+            base.OnActionExecuting(context);
         }
 
         // GET: UsersController
@@ -104,13 +113,17 @@ namespace TechSupportXPress.Controllers
                     Gender = model.Gender,
                     City = model.City,
                     Country = model.Country,
-                    PhoneNumber = model.PhoneNumber,
+                    PhoneNumber = model.PhoneNumber
                 };
 
                 var result = await _userManager.CreateAsync(registereduser, model.Password);
 
                 if (result.Succeeded)
                 {
+                    var user = await _userManager.FindByEmailAsync(model.Email);
+                    user.EmailConfirmed = true;
+                    await _userManager.UpdateAsync(user);
+
                     if (!string.IsNullOrEmpty(model.Role))
                     {
                         await _userManager.AddToRoleAsync(registereduser, model.Role);
