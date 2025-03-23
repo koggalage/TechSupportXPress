@@ -179,7 +179,7 @@
                         }
                     </tbody>
                 </table>
-                @if (@Model.TicketDetails.Status.Code == "Assigned")
+                @if (@Model.TicketDetails.Status.Code == "Assigned" || @Model.TicketDetails.Status.Code == "ReOpened")
                 {
                     @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_SUPPORT))
                     {

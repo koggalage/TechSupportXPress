@@ -8,7 +8,6 @@ using TechSupportXPress.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
@@ -26,8 +25,8 @@ builder.Services.AddTransient<IEmailSender, SESEmailSender>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.AddSignalR();
 
-// Add health checks
 builder.Services.AddHealthChecks()
     .AddCheck("Self", () => HealthCheckResult.Healthy("App is running"));
 
@@ -39,9 +38,10 @@ var app = builder.Build();
 //    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 //    dbContext.Database.Migrate();
 //    dbContext.EnsureViewsCreated();
-//}
+//}sssss
 
-// Configure the HTTP request pipeline.
+app.MapHub<NotificationHub>("/notificationHub");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -54,15 +54,16 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-app.MapRazorPages();
 
-// Map health check endpoint
+app.MapRazorPages();
 app.MapHealthChecks("/health");
 
 app.Run();

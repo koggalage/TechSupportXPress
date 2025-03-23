@@ -16,6 +16,8 @@ using TechSupportXPress.Resources;
 using Constants = TechSupportXPress.Resources.Constants;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.SignalR;
+using TechSupportXPress.Brokers;
 
 namespace TechSupportXPress.Controllers
 {
@@ -24,12 +26,19 @@ namespace TechSupportXPress.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly IHubContext<NotificationHub> _hubContext;
 
-        public TicketsController(ApplicationDbContext context, IConfiguration configuration, UserManager<ApplicationUser> userManager)
+        public TicketsController(
+            ApplicationDbContext context,
+            IConfiguration configuration,
+            UserManager<ApplicationUser> userManager,
+            IHubContext<NotificationHub> hubContext
+            )
         {
             _context = context;
             _configuration = configuration;
             _userManager = userManager;
+            _hubContext = hubContext;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -268,7 +277,7 @@ namespace TechSupportXPress.Controllers
             _context.Add(ticket);
             await _context.SaveChangesAsync();
 
-            // 📝 Audit Trail
+            //Audit Trail
             var activity = new AuditTrail
             {
                 Action = "Create",
@@ -283,6 +292,21 @@ namespace TechSupportXPress.Controllers
             await _context.SaveChangesAsync();
 
             TempData["MESSAGE"] = "Ticket Details successfully Created";
+
+            var adminRoleId = await _context.Roles
+            .Where(r => r.Name == "ADMIN")
+            .Select(r => r.Id)
+            .FirstOrDefaultAsync();
+
+            var adminUsers = await _context.Users
+                .Where(u => _context.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == adminRoleId))
+                .ToListAsync();
+
+            foreach (var admin in adminUsers)
+            {
+                await _hubContext.Clients.User(admin.Id).SendAsync("ReceiveNotification",
+                    $"New Ticket #{ticket.Id} created: {ticket.Title}");
+            }
 
             return RedirectToAction(nameof(Index));
         }
@@ -547,6 +571,36 @@ namespace TechSupportXPress.Controllers
 
             TempData["MESSAGE"] = $"Ticket status changed to {vm.NextStatus} successfully Created";
 
+            // Send Notification via SignalR
+            var currentUser = await _context.Users.FindAsync(userId);
+            var roles = await _userManager.GetRolesAsync(currentUser);
+
+            if (roles.Contains("SUPPORT"))
+            {
+                // Notify admin when support resolves a ticket
+                var adminRoleId = await _context.Roles
+                    .Where(r => r.Name == "ADMIN")
+                    .Select(r => r.Id)
+                    .FirstOrDefaultAsync();
+
+                var adminUsers = await _context.Users
+                    .Where(u => _context.UserRoles.Any(ur => ur.RoleId == adminRoleId && ur.UserId == u.Id))
+                    .ToListAsync();
+
+                foreach (var admin in adminUsers)
+                {
+                    await _hubContext.Clients.User(admin.Id).SendAsync("ReceiveNotification",
+                        $"Support updated Ticket #{ticket.Id} status to {vm.NextStatus}");
+                }
+            }
+
+            if (roles.Contains("ADMIN") || roles.Contains("SUPPORT"))
+            {
+                // Notify ticket creator
+                await _hubContext.Clients.User(ticket.CreatedById).SendAsync("ReceiveNotification",
+                    $"Your Ticket #{ticket.Id} has been updated to status: {vm.NextStatus}");
+            }
+
             //return RedirectToAction("Resolve", new { id = id });
             return RedirectToAction(nameof(Index));
         }
@@ -634,7 +688,20 @@ namespace TechSupportXPress.Controllers
 
             TempData["MESSAGE"] = "Ticket Closed successfully";
 
-            return RedirectToAction("Resolve", new { id = id });
+            if (!string.IsNullOrEmpty(ticket.CreatedById))
+            {
+                await _hubContext.Clients.User(ticket.CreatedById).SendAsync("ReceiveNotification",
+                    $"Your ticket #{ticket.Id} has been closed.");
+            }
+
+            if (!string.IsNullOrEmpty(ticket.AssignedToId))
+            {
+                await _hubContext.Clients.User(ticket.AssignedToId).SendAsync("ReceiveNotification",
+                    $"Ticket #{ticket.Id} assigned to you has been closed.");
+            }
+
+            //return RedirectToAction("Resolve", new { id = id });
+            return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> ReOpen(int? id, TicketViewModel vm)
@@ -719,11 +786,31 @@ namespace TechSupportXPress.Controllers
             _context.Add(activity);
             await _context.SaveChangesAsync();
 
-
-
             TempData["MESSAGE"] = "Ticket Re-Opened successfully";
 
-            return RedirectToAction("Resolve", new { id = id });
+            var adminRoleId = await _context.Roles
+            .Where(r => r.Name == "ADMIN")
+            .Select(r => r.Id)
+            .FirstOrDefaultAsync();
+
+            var adminUsers = await _context.Users
+                .Where(u => _context.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == adminRoleId))
+                .ToListAsync();
+
+            foreach (var admin in adminUsers)
+            {
+                await _hubContext.Clients.User(admin.Id).SendAsync("ReceiveNotification",
+                    $"Ticket #{ticket.Id} has been re-opened by the user.");
+            }
+
+            if (!string.IsNullOrEmpty(ticket.AssignedToId))
+            {
+                await _hubContext.Clients.User(ticket.AssignedToId).SendAsync("ReceiveNotification",
+                    $"Ticket #{ticket.Id}: {ticket.Title} has been re-opened.");
+            }
+
+            //return RedirectToAction("Resolve", new { id = id });
+            return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> TicketAssignment(int? id, TicketViewModel vm)
@@ -830,6 +917,9 @@ namespace TechSupportXPress.Controllers
 
 
                 TempData["MESSAGE"] = "Ticket Assigned successfully";
+
+                await _hubContext.Clients.User(vm.AssignedToId).SendAsync("ReceiveNotification",
+            $"You have been assigned to Ticket #{ticket.Id}: {ticket.Title}");
 
                 //return RedirectToAction("Resolve", new { id = id });
                 return RedirectToAction(nameof(Index));
