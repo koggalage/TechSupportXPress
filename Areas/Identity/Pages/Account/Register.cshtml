@@ -93,12 +93,21 @@
                                             </div>
 
                                             <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input asp-for="Input.Gender" class="form-control" />
-                                                    <label asp-for="Input.Gender">Gender</label>
-                                                    <span asp-validation-for="Input.Gender" class="text-danger"></span>
+                                                <label class="form-label">Gender</label>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" asp-for="Input.Gender" value="Male"
+                                                           checked="@(Model.Input?.Gender == "Male")" />
+                                                    <label class="form-check-label">Male</label>
                                                 </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" asp-for="Input.Gender" value="Female"
+                                                           checked="@(Model.Input?.Gender == "Female")" />
+                                                    <label class="form-check-label">Female</label>
+                                                </div>
+                                                <span asp-validation-for="Input.Gender" class="text-danger"></span>
                                             </div>
+
+
                                             <div class="col-md-6">
                                                 <div class="form-floating mb-3">
                                                     <input asp-for="Input.Country" class="form-control" />
@@ -114,6 +123,15 @@
                                                     <span asp-validation-for="Input.City" class="text-danger"></span>
                                                 </div>
                                             </div>
+
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input asp-for="Input.PhoneNumber" class="form-control" />
+                                                    <label asp-for="Input.PhoneNumber">Phone Number</label>
+                                                    <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                                                </div>
+                                            </div>
+
 
                                             <div class="col-md-6">
                                                 <div class="form-floating mb-3">

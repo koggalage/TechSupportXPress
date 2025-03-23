@@ -123,6 +123,12 @@ namespace TechSupportXPress.Areas.Identity.Pages.Account
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
+
+            [Required]
+            [Phone]
+            [Display(Name = "Phone Number")]
+            public string PhoneNumber { get; set; }
+
         }
 
 
@@ -146,6 +152,8 @@ namespace TechSupportXPress.Areas.Identity.Pages.Account
                 user.Gender = Input.Gender;
                 user.Country = Input.Country;
                 user.City = Input.City;
+                user.PhoneNumber = Input.PhoneNumber;
+
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);

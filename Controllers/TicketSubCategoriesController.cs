@@ -184,7 +184,9 @@ namespace TechSupportXPress.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
+
+            //return RedirectToAction(nameof(Index));
+            return RedirectToAction("Index", new { id = ticketSubCategory.CategoryId });
         }
 
         // GET: TicketSubCategories/Delete/5
@@ -221,7 +223,7 @@ namespace TechSupportXPress.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Index", new { id = ticketSubCategory.CategoryId });
         }
 
         private bool TicketSubCategoryExists(int id)

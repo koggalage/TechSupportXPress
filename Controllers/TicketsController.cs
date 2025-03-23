@@ -181,7 +181,7 @@ namespace TechSupportXPress.Controllers
                .Include(t => t.Priority)
                .FirstOrDefaultAsync(m => m.Id == id);
 
-           
+
 
             if (vm.TicketDetails == null)
             {
@@ -220,40 +220,46 @@ namespace TechSupportXPress.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(TicketViewModel ticketvm, IFormFile attachment)
         {
-
             if (attachment != null && attachment.Length > 0)
             {
-                var filename = "Ticket_Attachment" + DateTime.Now.ToString("yyyymmddhhmmss") + "_" + attachment.FileName;
-                var path = _configuration["FileSettings:UploadsFolder"]!;
-                var filepath = Path.Combine(path, filename);
-                var stream = new FileStream(filepath, FileMode.Create);
+                // Ensure the "uploads" folder exists inside wwwroot
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                // Clean and create unique filename
+                var filename = "Ticket_Attachment_" + DateTime.Now.ToString("yyyyMMddHHmmss") + "_" + Path.GetFileName(attachment.FileName);
+                var filePath = Path.Combine(uploadsFolder, filename);
+
+                using var stream = new FileStream(filePath, FileMode.Create);
                 await attachment.CopyToAsync(stream);
+
                 ticketvm.Attachment = filename;
             }
 
-            var pendingstatus = await _context
-                    .SystemCodeDetails
-                    .Include(x => x.SystemCode)
-                    .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Description == "Pending")
-                    .FirstOrDefaultAsync();
-
-            Ticket ticket = new();
-            ticket.Id = ticketvm.Id;
-            ticket.Title = ticketvm.Title;
-            ticket.Description = ticketvm.Description;
-            ticket.StatusId = pendingstatus.Id;
-            ticket.PriorityId = ticketvm.PriorityId;
-            ticket.SubCategoryId = ticketvm.SubCategoryId;
-            ticket.Attachment = ticketvm.Attachment;
+            var pendingStatus = await _context
+                .SystemCodeDetails
+                .Include(x => x.SystemCode)
+                .FirstOrDefaultAsync(x => x.SystemCode.Code == "ResolutionStatus" && x.Description == "Pending");
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                ticket.CreatedOn = DateTime.Now;
-                 ticket.CreatedById = userId;
 
-                _context.Add(ticket);
-                await _context.SaveChangesAsync();
+            Ticket ticket = new()
+            {
+                Title = ticketvm.Title,
+                Description = ticketvm.Description,
+                StatusId = pendingStatus.Id,
+                PriorityId = ticketvm.PriorityId,
+                SubCategoryId = ticketvm.SubCategoryId,
+                Attachment = ticketvm.Attachment,
+                CreatedById = userId,
+                CreatedOn = DateTime.Now
+            };
 
-            //Audit Log
+            _context.Add(ticket);
+            await _context.SaveChangesAsync();
+
+            // 📝 Audit Trail
             var activity = new AuditTrail
             {
                 Action = "Create",
@@ -269,80 +275,100 @@ namespace TechSupportXPress.Controllers
 
             TempData["MESSAGE"] = "Ticket Details successfully Created";
 
-            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
-
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
-            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
-
             return RedirectToAction(nameof(Index));
         }
+
 
         // GET: Tickets/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
-            var ticket = await _context.Tickets.FindAsync(id);
+            var ticket = await _context.Tickets
+                .Include(t => t.SubCategory)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
             if (ticket == null)
-            {
                 return NotFound();
-            }
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName", ticket.CreatedById);
-            return View(ticket);
+
+            var viewModel = new TicketViewModel
+            {
+                Id = ticket.Id,
+                Title = ticket.Title,
+                Description = ticket.Description,
+                PriorityId = ticket.PriorityId,
+                CategoryId = ticket.SubCategory.CategoryId,
+                SubCategoryId = ticket.SubCategoryId,
+                Attachment = ticket.Attachment
+            };
+
+            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "Priority"), "Id", "Description", ticket.PriorityId);
+            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name", viewModel.CategoryId);
+            ViewData["SubCategoryId"] = new SelectList(_context.TicketSubCategories.Where(s => s.CategoryId == viewModel.CategoryId), "Id", "Name", viewModel.SubCategoryId);
+
+            return View(viewModel);
         }
+
 
         // POST: Tickets/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Ticket ticket)
+        public async Task<IActionResult> Edit(int id, TicketViewModel model, IFormFile attachment)
         {
-            if (id != ticket.Id)
-            {
+            if (id != model.Id)
                 return NotFound();
+
+            var ticket = await _context.Tickets.FindAsync(id);
+            if (ticket == null)
+                return NotFound();
+
+            // Handle file upload
+            if (attachment != null && attachment.Length > 0)
+            {
+                // Ensure the folder exists
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                // Save with timestamp to avoid conflicts
+                var fileName = "Ticket_" + DateTime.Now.ToString("yyyyMMddHHmmss") + "_" + Path.GetFileName(attachment.FileName);
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await attachment.CopyToAsync(stream);
+
+                ticket.Attachment = fileName;
             }
 
-            
-                try
-                {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                ticket.ModifiedOn = DateTime.Now;
-                ticket.ModifiedById = userId;
+            // Update ticket properties
+            ticket.Title = model.Title;
+            ticket.Description = model.Description;
+            ticket.PriorityId = model.PriorityId;
+            ticket.SubCategoryId = model.SubCategoryId;
+            ticket.ModifiedOn = DateTime.Now;
+            ticket.ModifiedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            try
+            {
                 _context.Update(ticket);
-                    await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
-                //Audit Log
-                var activity = new AuditTrail
-                {
-                    Action = "Edit",
-                    TimeStamp = DateTime.Now,
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    UserId = userId,
-                    Module = "Tickets",
-                    AffectedTable = "Tickets"
-                };
-
-                TempData["MESSAGE"] = "Ticket Details successfully Updated";
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!TicketExists(ticket.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                TempData["MESSAGE"] = "Ticket updated successfully.";
                 return RedirectToAction(nameof(Index));
-            
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TicketExists(ticket.Id))
+                    return NotFound();
+
+                throw;
+            }
         }
+
+
 
         // GET: Tickets/Delete/5
         public async Task<IActionResult> Delete(int? id)
@@ -740,7 +766,7 @@ namespace TechSupportXPress.Controllers
 
             ViewData["UserId"] = new SelectList(supportUsers, "Id", "FullName");
 
-           // ViewData["UserId"] = new SelectList(_context.Users, "Id", "FullName");
+            // ViewData["UserId"] = new SelectList(_context.Users, "Id", "FullName");
 
             return View(vm);
         }
@@ -753,7 +779,7 @@ namespace TechSupportXPress.Controllers
             {
                 var reassignedstatus = await _context.SystemCodeDetails
                     .Include(x => x.SystemCode)
-                    .Where(x => x.SystemCode.Code == Constants.SYSTEM_CODE_RESOLUTION_STATUS && 
+                    .Where(x => x.SystemCode.Code == Constants.SYSTEM_CODE_RESOLUTION_STATUS &&
                                 x.Code == Constants.RESOLUTION_STATUS_ASSIGNED)
                     .FirstOrDefaultAsync();
 

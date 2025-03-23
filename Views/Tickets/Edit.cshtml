@@ -1,8 +1,14 @@
-﻿@model TechSupportXPress.Models.Ticket
+﻿@model TechSupportXPress.ViewModels.TicketViewModel
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Edit Ticket";
 }
+
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Tickets
+    </a>
+</div>
 
 <div class="card rounded-4">
     <div class="card-body">
@@ -10,78 +16,95 @@
             <h6 class="mb-0">Update Ticket</h6>
         </div>
         <hr />
-        <div class="row">
-            <div class="col-md-12">
-                <form asp-action="Edit">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                    <input type="hidden" asp-for="Id" />
 
-                    <div class="row">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CreatedById" />
+            <input type="hidden" asp-for="CreatedOn" />
 
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="Title" class="control-label"></label>
-                                <input asp-for="Title" class="form-control" />
-                                <span asp-validation-for="Title" class="text-danger"></span>
-                            </div>
-                        </div>
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="row">
 
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="Description" class="control-label"></label>
-                                <input asp-for="Description" class="form-control" />
-                                <span asp-validation-for="Description" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="StatusId" class="control-label"></label>
-                                <input asp-for="StatusId" class="form-control" />
-                                <span asp-validation-for="StatusId" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="PriorityId" class="control-label"></label>
-                                <input asp-for="PriorityId" class="form-control" />
-                                <span asp-validation-for="PriorityId" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="CreatedById" class="control-label"></label>
-                                <select asp-for="CreatedById" class="form-control" asp-items="ViewBag.CreatedById"></select>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="CreatedOn" class="control-label"></label>
-                                <input asp-for="CreatedOn" class="form-control" />
-                                <span asp-validation-for="CreatedOn" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                    </div>
-
+                <div class="col-md-6">
                     <div class="form-group">
-                        <input type="submit" value="Update Ticket" class="btn btn-primary" />
+                        <label asp-for="Title" class="control-label"></label>
+                        <input asp-for="Title" class="form-control" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
                     </div>
-                </form>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Description" class="control-label"></label>
+                        <input asp-for="Description" class="form-control" />
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="PriorityId" class="control-label"></label>
+                        <select asp-for="PriorityId" class="form-control" asp-items="ViewBag.PriorityId"></select>
+                        <span asp-validation-for="PriorityId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="CategoryId" class="control-label"></label>
+                        <select asp-for="CategoryId" class="form-control get-subcategories" asp-items="ViewBag.CategoryId"></select>
+                        <span asp-validation-for="CategoryId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="SubCategoryId" class="control-label"></label>
+                        <select asp-for="SubCategoryId" class="form-control" asp-items="ViewBag.SubCategoryId"></select>
+                        <span asp-validation-for="SubCategoryId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Attachment" class="control-label"></label>
+                        <input type="file" name="attachment" class="form-control" accept=".png,.jpg,.jpeg,.pdf,.doc" />
+                        @if (!string.IsNullOrEmpty(Model.Attachment))
+                        {
+                            <small class="text-muted">Current File: @Model.Attachment</small>
+                        }
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <div class="row p-3">
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary float-end">
+                        <i class="bi bi-save"></i> Save
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
-<div>
-    <a class="btn btn-warning" asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Optional: Dynamic SubCategory loading if you use AJAX
+        $(".get-subcategories").change(function () {
+            const categoryId = $(this).val();
+            const subCategoryDropdown = $("[name='SubCategoryId']");
+
+            $.get("/YourController/GetSubCategoriesByCategory", { categoryId: categoryId }, function (data) {
+                subCategoryDropdown.empty();
+                $.each(data, function (i, sub) {
+                    subCategoryDropdown.append($('<option>', {
+                        value: sub.value,
+                        text: sub.text
+                    }));
+                });
+            });
+        });
+    </script>
 }

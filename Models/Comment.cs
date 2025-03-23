@@ -1,4 +1,6 @@
-﻿namespace TechSupportXPress.Models
+﻿using System.ComponentModel;
+
+namespace TechSupportXPress.Models
 {
     public class Comment : AuditInfo
     {
@@ -6,6 +8,7 @@
 
         public string Description { get; set; }
 
+        [DisplayName("Ticket")]
         public int TicketId { get; set; }
         public Ticket Ticket { get; set; }
     }

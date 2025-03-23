@@ -3,6 +3,13 @@
 @{
     ViewData["Title"] = "Create";
 }
+
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Comments
+    </a>
+</div>
+
 <div class="card rounded-4">
     <div class="card-body">
         <div class="d-flex align-items-center">
@@ -10,10 +17,19 @@
         </div>
         <hr />
         <div class="row">
+            <form asp-action="Create">
+
             <div class="col-md-12">
-                <form asp-action="Create">
+               
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     <div class="row">
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="TicketId" class="control-label"></label>
+                                <select asp-for="TicketId" class="form-control" asp-items="ViewBag.TicketId"></select>
+                            </div>
+                        </div>
 
                         <div class="col-md-6">
                             <div class="form-group">
@@ -23,22 +39,18 @@
                             </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="TicketId" class="control-label"></label>
-                                <select asp-for="TicketId" class="form-control" asp-items="ViewBag.TicketId"></select>
-                            </div>
-                        </div>
-                        
                     </div>
-                    <div class="row p-3">
-                        <div class="form-group">
-                            <a class="btn btn-warning float-start" asp-action="Index"><i class="fadeIn animated bx bx-arrow-back"></i> Back to List</a>
-                            <button type="submit" class="btn btn-primary float-end"><i class="fadeIn animated bx bx-save"></i> Save</button>
-                        </div>
-                    </div>
-                </form>
+                    
+               
             </div>
+
+                <div class="row p-3">
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary float-end"><i class="fadeIn animated bx bx-save"></i> Create</button>
+                    </div>
+                </div>
+
+            </form>
         </div>
     </div>
 </div>

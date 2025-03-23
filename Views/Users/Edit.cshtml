@@ -4,6 +4,12 @@
     ViewData["Title"] = "Edit User";
 }
 
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Users
+    </a>
+</div>
+
 <div class="card rounded-4">
     <div class="card-body">
         <div class="d-flex align-items-center">
@@ -11,8 +17,11 @@
         </div>
         <hr />
         <div class="row">
+
+            <form asp-action="Edit" method="post">
+
             <div class="col-md-12">
-                <form asp-action="Edit" method="post">
+                
                     <input type="hidden" asp-for="Id" />
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     <div class="row">
@@ -105,12 +114,17 @@
 
                     </div>
 
-                    <div class="form-group mt-3">
-                        <input type="submit" value="Update" class="btn btn-success" />
-                        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-                    </div>
-                </form>
+                   
             </div>
+
+                <div class="row p-3">
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary float-end"><i class="fadeIn animated bx bx-save"></i> Save</button>
+                    </div>
+                </div>
+
+            </form>
+
         </div>
     </div>
 </div>

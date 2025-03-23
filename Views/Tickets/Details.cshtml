@@ -4,10 +4,16 @@
     ViewData["Title"] = "Details";
 }
 
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Tickets
+    </a>
+</div>
+
 <div class="card rounded-4">
     <div class="card-body">
         <div class="d-flex align-items-center">
-            <h6 class="mb-0">Ticket Details</h6>
+            <h6 class="mb-0"></h6>
         </div>
         <hr />
         <div class="row">
@@ -91,15 +97,24 @@
                     </tr>
 
                     <tr>
-
                         <th>
                             @Html.DisplayNameFor(model => model.Attachment)
                         </th>
                         <td>
-                            @Html.DisplayFor(model => model.TicketDetails.Attachment)
+                            @if (!string.IsNullOrEmpty(Model.TicketDetails.Attachment))
+                            {
+                                <a href="~/uploads/@Model.TicketDetails.Attachment" download class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-download"></i> Download Attachment
+                                </a>
+                                <span class="text-muted ms-2">@Model.TicketDetails.Attachment</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No attachment</span>
+                            }
                         </td>
-
                     </tr>
+
 
                     <tr>
 
@@ -225,9 +240,5 @@
 
         </div>
     </div>
-</div>
-
-<div>
-    <a asp-action="Index" class="btn btn-warning">Back to List</a>
 </div>
 
