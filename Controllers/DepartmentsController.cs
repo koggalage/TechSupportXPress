@@ -112,8 +112,6 @@ namespace TechSupportXPress.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
-            {
                 try
                 {
                     var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -122,7 +120,23 @@ namespace TechSupportXPress.Controllers
 
                     _context.Update(department);
                     await _context.SaveChangesAsync();
-                }
+
+                var activity = new AuditTrail
+                {
+                    Action = "Edit",
+                    TimeStamp = DateTime.Now,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserId = userId,
+                    Module = "Departments",
+                    AffectedTable = "Department"
+                };
+
+
+                _context.Add(activity);
+                await _context.SaveChangesAsync();
+
+                TempData["MESSAGE"] = "Department successfully Updated";
+            }
                 catch (DbUpdateConcurrencyException)
                 {
                     if (!DepartmentExists(department.Id))
@@ -135,9 +149,6 @@ namespace TechSupportXPress.Controllers
                     }
                 }
                 return RedirectToAction(nameof(Index));
-            }
-
-            return View(department);
         }
 
         // GET: Departments/Delete/5

@@ -151,7 +151,7 @@ namespace TechSupportXPress.Controllers
                 _context.Add(activity);
                 await _context.SaveChangesAsync();
 
-                TempData["MESSAGE"] = "Comment successfully Added";
+                TempData["MESSAGE"] = "Comment successfully Updated";
 
 
             }

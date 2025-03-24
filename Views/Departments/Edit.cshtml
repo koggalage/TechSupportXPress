@@ -4,15 +4,26 @@
     ViewData["Title"] = "Edit";
 }
 
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Departments
+    </a>
+</div>
+
 <h1>Edit</h1>
 
 <h4>Department</h4>
 <hr />
 <div class="row">
+
+    <form asp-action="Edit">
+
     <div class="col-md-4">
-        <form asp-action="Edit">
+        
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CreatedById" />
+            <input type="hidden" asp-for="CreatedOn" />
             <div class="form-group">
                 <label asp-for="Code" class="control-label"></label>
                 <input asp-for="Code" class="form-control" />
@@ -23,45 +34,16 @@
                 <input asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="CreatedById" class="control-label"></label>
-                <select asp-for="CreatedById" class="form-control" asp-items="ViewBag.CreatedById"></select>
-                <span asp-validation-for="CreatedById" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="CreatedOn" class="control-label"></label>
-                <input asp-for="CreatedOn" class="form-control" />
-                <span asp-validation-for="CreatedOn" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ModifiedById" class="control-label"></label>
-                <select asp-for="ModifiedById" class="form-control" asp-items="ViewBag.ModifiedById"></select>
-                <span asp-validation-for="ModifiedById" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ModifiedOn" class="control-label"></label>
-                <input asp-for="ModifiedOn" class="form-control" />
-                <span asp-validation-for="ModifiedOn" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="DeletedById" class="control-label"></label>
-                <select asp-for="DeletedById" class="form-control" asp-items="ViewBag.DeletedById"></select>
-                <span asp-validation-for="DeletedById" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="DeletedOn" class="control-label"></label>
-                <input asp-for="DeletedOn" class="form-control" />
-                <span asp-validation-for="DeletedOn" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
     </div>
-</div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
+        <div class="row p-3">
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary float-end"><i class="fadeIn animated bx bx-save"></i> Save</button>
+            </div>
+        </div>
+
+    </form>
+
 </div>
 
 @section Scripts {
