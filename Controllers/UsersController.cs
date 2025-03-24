@@ -40,7 +40,10 @@ namespace TechSupportXPress.Controllers
         // GET: UsersController
         public async Task<ActionResult> Index()
         {
-            var users = await _userManager.Users.ToListAsync();
+            var users = await _userManager.Users
+                .Where(u => !u.IsDeleted)
+                .ToListAsync();
+
             var userRoles = new List<UserWithRoleViewModel>();
 
             foreach (var user in users)
@@ -61,6 +64,7 @@ namespace TechSupportXPress.Controllers
 
             return View(userRoles);
         }
+
 
 
         // GET: UsersController/Details/5
@@ -262,25 +266,64 @@ namespace TechSupportXPress.Controllers
 
 
         // GET: UsersController/Delete/5
-        public ActionResult Delete(int id)
+        // GET: UsersController/Delete/5
+        public async Task<IActionResult> Delete(string id)
         {
-            return View();
+            if (string.IsNullOrEmpty(id))
+                return NotFound();
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            return View(user); // You can also pass a simplified view model
         }
 
+
         // POST: UsersController/Delete/5
-        [HttpPost]
+        [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
-            try
+            var user = await _userManager.FindByIdAsync(id);
+
+            if (user == null)
+                return NotFound();
+
+            // Soft delete by marking as deleted and prefixing email and username
+            user.IsDeleted = true;
+
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            user.Email = $"deleted-{timestamp}-{user.Email}";
+            user.UserName = $"deleted-{timestamp}-{user.UserName}";
+            user.NormalizedEmail = user.Email.ToUpperInvariant();
+            user.NormalizedUserName = user.UserName.ToUpperInvariant();
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
             {
+                TempData["Error"] = "Failed to delete the user.";
                 return RedirectToAction(nameof(Index));
             }
-            catch
+
+            // Optional: log audit
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            _context.AuditTrails.Add(new AuditTrail
             {
-                return View();
-            }
+                Action = "Soft Delete",
+                TimeStamp = DateTime.Now,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                UserId = currentUserId,
+                Module = "Users",
+                AffectedTable = "AspNetUsers"
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["MESSAGE"] = "User deleted successfully (soft delete).";
+            return RedirectToAction(nameof(Index));
         }
+
+
 
         public async Task<IActionResult> Profile()
         {

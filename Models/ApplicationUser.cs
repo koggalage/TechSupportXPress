@@ -19,5 +19,7 @@ namespace TechSupportXPress.Models
         public string City { get; set; }
 
         public string FullName => $"{FirstName} {MiddleName} {LastName}";
+
+        public bool IsDeleted { get; set; } = false;
     }
 }
