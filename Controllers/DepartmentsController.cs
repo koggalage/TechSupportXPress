@@ -35,7 +35,8 @@ namespace TechSupportXPress.Controllers
             var applicationDbContext = _context.Departments
                 .Include(d => d.CreatedBy)
                 .Include(d => d.DeletedBy)
-                .Include(d => d.ModifiedBy);
+                .Include(d => d.ModifiedBy)
+                .OrderByDescending(a => a.CreatedOn);
 
             return View(await applicationDbContext.ToListAsync());
         }
@@ -74,14 +75,24 @@ namespace TechSupportXPress.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Department department)
         {
+            var existing = await _context.Departments
+                .AnyAsync(d => d.Code.ToLower() == department.Code.ToLower());
+
+            if (existing)
+            {
+                ModelState.AddModelError("Code", "Department code already exists.");
+                return View(department);
+            }
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             department.CreatedOn = DateTime.Now;
             department.CreatedById = userId;
 
-                _context.Add(department);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+            _context.Add(department);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
+
 
         // GET: Departments/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -112,14 +123,23 @@ namespace TechSupportXPress.Controllers
                 return NotFound();
             }
 
-                try
-                {
-                    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                    department.ModifiedOn = DateTime.Now;
-                    department.ModifiedById = userId;
+            var exists = await _context.Departments
+                .AnyAsync(d => d.Code.ToLower() == department.Code.ToLower() && d.Id != department.Id);
 
-                    _context.Update(department);
-                    await _context.SaveChangesAsync();
+            if (exists)
+            {
+                ModelState.AddModelError("Code", "Department code already exists.");
+                return View(department);
+            }
+
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                department.ModifiedOn = DateTime.Now;
+                department.ModifiedById = userId;
+
+                _context.Update(department);
+                await _context.SaveChangesAsync();
 
                 var activity = new AuditTrail
                 {
@@ -131,25 +151,26 @@ namespace TechSupportXPress.Controllers
                     AffectedTable = "Department"
                 };
 
-
                 _context.Add(activity);
                 await _context.SaveChangesAsync();
 
                 TempData["MESSAGE"] = "Department successfully Updated";
             }
-                catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!DepartmentExists(department.Id))
                 {
-                    if (!DepartmentExists(department.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    return NotFound();
                 }
-                return RedirectToAction(nameof(Index));
+                else
+                {
+                    throw;
+                }
+            }
+
+            return RedirectToAction(nameof(Index));
         }
+
 
         // GET: Departments/Delete/5
         public async Task<IActionResult> Delete(int? id)

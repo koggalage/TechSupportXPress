@@ -37,6 +37,7 @@ namespace TechSupportXPress.Controllers
                 .SystemCodeDetails
                 .Include(s => s.SystemCode)
                 .Include(s => s.CreatedBy)
+                .OrderByDescending(a => a.CreatedOn)
                 .AsQueryable();
 
             if (vm != null)

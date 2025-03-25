@@ -49,65 +49,6 @@ namespace TechSupportXPress.Controllers
             base.OnActionExecuting(context);
         }
 
-        // GET: Tickets
-        //public async Task<IActionResult> Index(TicketViewModel vm)
-        //{
-
-        //    var alltickets = _context.Tickets
-        //        .Include(t => t.CreatedBy)
-        //        .Include(t => t.SubCategory)
-        //        .Include(t => t.Priority)
-        //        .Include(t => t.Status)
-        //        .Include(t => t.TicketComments)
-        //        .OrderBy(x => x.CreatedOn)
-        //        .AsQueryable();
-
-        //    if (vm != null)
-        //    {
-        //        if (!string.IsNullOrEmpty(vm.Title))
-        //        {
-        //            alltickets = alltickets.Where(x => x.Title.Contains(vm.Title));
-        //        }
-
-        //        if (!string.IsNullOrEmpty(vm.CreatedById))
-        //        {
-        //            alltickets = alltickets.Where(x => x.CreatedById == vm.CreatedById);
-        //        }
-
-        //        if (vm.StatusId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.StatusId == vm.StatusId);
-        //        }
-
-        //        if (vm.PriorityId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.PriorityId == vm.PriorityId);
-        //        }
-
-        //        if (vm.CategoryId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.SubCategory.CategoryId == vm.CategoryId);
-        //        }
-        //    }
-
-        //    vm.Tickets = await alltickets.ToListAsync();
-
-
-
-
-
-        //    ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
-        //        .Include(x => x.SystemCode)
-        //        .Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
-        //    ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
-        //    ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
-        //    ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails
-        //        .Include(x => x.SystemCode)
-        //        .Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-
-        //    return View(vm);
-        //}
-
         public async Task<IActionResult> Index(TicketViewModel vm)
         {
             var currentUserId = _userManager.GetUserId(User);
@@ -121,6 +62,7 @@ namespace TechSupportXPress.Controllers
                 .Include(t => t.Status)
                 .Include(t => t.TicketComments)
                 .OrderBy(x => x.CreatedOn)
+                .OrderByDescending(a => a.CreatedOn)
                 .AsQueryable();
 
             // 🔐 Apply role-based access control
@@ -999,11 +941,12 @@ namespace TechSupportXPress.Controllers
             var currentUser = await _userManager.GetUserAsync(User);
             var userRoles = await _userManager.GetRolesAsync(currentUser);
 
-            var assignedStatus = await _context
-                .SystemCodeDetails
+            var assignedStatuses = await _context.SystemCodeDetails
                 .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Assigned")
-                .FirstOrDefaultAsync();
+                .Where(x => x.SystemCode.Code == "ResolutionStatus" &&
+                            (x.Code == "Assigned" || x.Code == "ReOpened"))
+                .Select(x => x.Id)
+                .ToListAsync();
 
             var alltickets = _context.Tickets
                 .Include(t => t.CreatedBy)
@@ -1011,15 +954,11 @@ namespace TechSupportXPress.Controllers
                 .Include(t => t.Priority)
                 .Include(t => t.Status)
                 .Include(t => t.TicketComments)
-                .Where(x => x.StatusId == assignedStatus.Id)
+                .Where(x => assignedStatuses.Contains(x.StatusId))
+                .OrderByDescending(a => a.CreatedOn)
                 .AsQueryable();
 
-            // 🔐 Apply role-based filtering
-            if (userRoles.Contains("ADMIN"))
-            {
-                // No filter - show all assigned tickets
-            }
-            else if (userRoles.Contains("SUPPORT"))
+            if (userRoles.Contains("SUPPORT"))
             {
                 alltickets = alltickets.Where(t => t.AssignedToId == currentUserId);
             }
@@ -1028,7 +967,6 @@ namespace TechSupportXPress.Controllers
                 alltickets = alltickets.Where(t => t.CreatedById == currentUserId);
             }
 
-            // 🔍 Filtering based on form input
             if (vm != null)
             {
                 if (!string.IsNullOrEmpty(vm.Title))
@@ -1063,6 +1001,7 @@ namespace TechSupportXPress.Controllers
 
             return View(vm);
         }
+
 
 
         //public async Task<IActionResult> ClosedTickets(TicketViewModel vm)
@@ -1145,6 +1084,7 @@ namespace TechSupportXPress.Controllers
                 .Include(t => t.Status)
                 .Include(t => t.TicketComments)
                 .Where(x => x.StatusId == closedStatus.Id)
+                .OrderByDescending(a => a.CreatedOn)
                 .AsQueryable();
 
             // 🔐 Apply role-based access
@@ -1287,6 +1227,7 @@ namespace TechSupportXPress.Controllers
                 .Include(t => t.Status)
                 .Include(t => t.TicketComments)
                 .Where(x => x.StatusId == resolvedStatus.Id)
+                .OrderByDescending(a => a.CreatedOn)
                 .AsQueryable();
 
             // 🔐 Role-based ticket filtering

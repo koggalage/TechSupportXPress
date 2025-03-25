@@ -33,7 +33,7 @@ namespace TechSupportXPress.Controllers
         // GET: Comments
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Comments.Include(c => c.CreatedBy).Include(c => c.Ticket);
+            var applicationDbContext = _context.Comments.Include(c => c.CreatedBy).Include(c => c.Ticket).OrderByDescending(a => a.CreatedOn);
             return View(await applicationDbContext.ToListAsync());
         }
 

@@ -36,7 +36,7 @@ namespace TechSupportXPress.Controllers
 
         public async Task<ActionResult> Index()
         {
-            var roles = await _context.Roles.ToListAsync();
+            var roles = await _context.Roles.OrderBy(a => a.Name).ToListAsync();
             return View(roles);
         }
 

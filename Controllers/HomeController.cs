@@ -101,11 +101,10 @@ namespace TechSupportXPress.Controllers
                 ReOpenedTickets = allTickets.Count(t => t.Status.Code == "ReOpened")
             };
 
-            // Last 7 days ticket count grouped by date
             var last7Days = Enumerable.Range(0, 7)
-    .Select(i => DateTime.Today.AddDays(-i))
-    .OrderBy(d => d)
-    .ToList();
+                .Select(i => DateTime.Today.AddDays(-i))
+                .OrderBy(d => d)
+                .ToList();
 
             var priorities = await _context.SystemCodeDetails
                 .Where(p => p.SystemCode.Code == "Priority")
@@ -127,7 +126,6 @@ namespace TechSupportXPress.Controllers
             ViewBag.ChartLabels = string.Join(",", last7Days.Select(d => $"'{d:MMM dd}'"));
             ViewBag.ChartData = chartData;
 
-
             var openStatuses = new[] { "Pending", "Assigned", "ReOpened" };
             var closedCount = allTickets.Count(t => t.Status.Code == "Closed");
             var openCount = allTickets.Count(t => openStatuses.Contains(t.Status.Code));
@@ -135,8 +133,16 @@ namespace TechSupportXPress.Controllers
             ViewBag.OpenTicketCount = openCount;
             ViewBag.ClosedTicketCount = closedCount;
 
+            var slaThresholdInMinutes = 5;
+            var slaBreaches = allTickets.Count(t =>
+                !new[] { "Closed", "Resolved" }.Contains(t.Status.Code) &&
+                DateTime.UtcNow.Subtract(t.CreatedOn).TotalMinutes > slaThresholdInMinutes
+            );
+            ViewBag.SlaBreaches = slaBreaches;
+
             return View(vm);
         }
+
 
 
 

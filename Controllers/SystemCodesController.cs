@@ -36,6 +36,7 @@ namespace TechSupportXPress.Controllers
             var systemcodes = _context
                 .SystemCodes
                 .Include(x => x.CreatedBy)
+                .OrderByDescending(a => a.CreatedOn)
                 .AsQueryable();
 
             if (vm != null)

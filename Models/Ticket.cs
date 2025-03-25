@@ -39,17 +39,18 @@ namespace TechSupportXPress.Models
 
         public DateTime? AssignedOn { get; set; }
 
+        [DisplayName("Duration (Minutes)")]
         public int? TicketDuration
         {
             get
             {
                 if (CreatedOn == null)
                     return null;
-                DateTime now = DateTime.UtcNow;
 
+                DateTime now = DateTime.UtcNow;
                 TimeSpan difference = now.Subtract(CreatedOn);
 
-                return difference.Days;
+                return (int)difference.TotalMinutes;
             }
         }
 

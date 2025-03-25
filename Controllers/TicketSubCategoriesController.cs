@@ -38,6 +38,7 @@ namespace TechSupportXPress.Controllers
                 .Include(t => t.CreatedBy)
                 .Include(t => t.ModifiedBy)
                 .Where(x => x.CategoryId == id)
+                .OrderByDescending(a => a.CreatedOn)
                 .ToList();
 
             vm.CategoryId = id;

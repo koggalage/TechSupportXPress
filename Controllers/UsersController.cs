@@ -42,6 +42,7 @@ namespace TechSupportXPress.Controllers
         {
             var users = await _userManager.Users
                 .Where(u => !u.IsDeleted)
+                .OrderByDescending(a => a.FirstName)
                 .ToListAsync();
 
             var userRoles = new List<UserWithRoleViewModel>();

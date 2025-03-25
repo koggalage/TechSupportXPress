@@ -32,7 +32,7 @@ namespace TechSupportXPress.Controllers
         // GET: TicketCategories
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.TicketCategories.Include(t => t.CreatedBy).Include(t => t.DeletedBy).Include(t => t.ModifiedBy);
+            var applicationDbContext = _context.TicketCategories.Include(t => t.CreatedBy).Include(t => t.DeletedBy).Include(t => t.ModifiedBy).OrderByDescending(a => a.CreatedOn);
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -200,15 +200,30 @@ namespace TechSupportXPress.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var ticketCategory = await _context.TicketCategories.FindAsync(id);
-            if (ticketCategory != null)
+            var ticketCategory = await _context.TicketCategories
+                .Include(c => c.CreatedBy)
+                .Include(c => c.ModifiedBy)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (ticketCategory == null)
+                return NotFound();
+
+            var hasSubCategories = await _context.TicketSubCategories
+                .AnyAsync(sc => sc.CategoryId == id);
+
+            if (hasSubCategories)
             {
-                _context.TicketCategories.Remove(ticketCategory);
+                TempData["Error"] = "Cannot delete this category as it has related sub-categories.";
+                return RedirectToAction(nameof(Index));
             }
 
+            _context.TicketCategories.Remove(ticketCategory);
             await _context.SaveChangesAsync();
+
+            TempData["MESSAGE"] = "Category deleted successfully";
             return RedirectToAction(nameof(Index));
         }
+
 
         private bool TicketCategoryExists(int id)
         {
