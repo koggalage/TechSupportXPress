@@ -168,10 +168,22 @@
                                             <a class="dropdown-item" asp-action="Details" asp-route-id="@item.Id">Details</a>
                                             <div class="dropdown-divider"></div>
 
-                                            @if (User.IsInRole(Constants.ROLE_ADMIN) || (User.IsInRole(Constants.ROLE_USER) && item.Status.Code == "Pending"))
+                                            @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_USER))
                                             {
-                                                <a class="dropdown-item" asp-action="Edit" asp-route-id="@item.Id">Edit</a>
-                                                <div class="dropdown-divider"></div>
+                                                @if (item.Status.Code == "Pending")
+                                                {
+                                                    <a class="dropdown-item" asp-action="Edit" asp-route-id="@item.Id">Edit</a>
+                                                    <div class="dropdown-divider"></div>
+                                                }
+                                            }
+
+                                            @if (item.Status.Code == "Pending")
+                                            {
+                                                @if (User.IsInRole(Constants.ROLE_ADMIN))
+                                                {
+                                                    <a class="dropdown-item" asp-action="TicketAssignment" asp-route-id="@item.Id">Assign</a>
+                                                    <div class="dropdown-divider"></div>
+                                                }
                                             }
 
                                             @if (item.Status.Code == "Assigned" || item.Status.Code == "ReOpened")
@@ -179,6 +191,24 @@
                                                 @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_SUPPORT))
                                                 {
                                                     <a class="dropdown-item" asp-action="Resolve" asp-route-id="@item.Id">Resolve</a>
+                                                }
+                                            }
+
+                                            @if (item.Status.Code == "Resolved")
+                                            {
+                                                @if (User.IsInRole(Constants.ROLE_ADMIN))
+                                                {
+                                                    <a class="dropdown-item" asp-action="Resolve" asp-route-id="@item.Id">Close</a>
+                                                    <div class="dropdown-divider"></div>
+                                                }
+                                            }
+
+                                            @if (item.Status.Code == "Closed")
+                                            {
+                                                @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_USER))
+                                                {
+                                                    <a class="dropdown-item" asp-action="Resolve" asp-route-id="@item.Id">Re-Open</a>
+                                                    <div class="dropdown-divider"></div>
                                                 }
                                             }
 
