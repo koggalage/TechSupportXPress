@@ -1,8 +1,35 @@
 ﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using TechSupportXPress.Models;
 
 namespace TechSupportXPress.ViewModels
 {
+    public class TicketCreateViewModel
+    {
+        [Required(ErrorMessage = "Title is required")]
+        [StringLength(200, ErrorMessage = "Title cannot exceed 200 characters")]
+        [DisplayName("Title")]
+        public string Title { get; set; }
+
+        [Required(ErrorMessage = "Description is required")]
+        [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
+        [DisplayName("Description")]
+        public string Description { get; set; }
+
+        [Required(ErrorMessage = "Priority is required")]
+        [DisplayName("Priority")]
+        public int PriorityId { get; set; }
+
+        [DisplayName("Ticket Category")]
+        public int? CategoryId { get; set; }
+
+        [Required(ErrorMessage = "Sub-category is required")]
+        [DisplayName("Ticket Sub-Category")]
+        public int? SubCategoryId { get; set; }
+
+        public IFormFile? Attachment { get; set; }
+    }
+
     public class TicketViewModel : AuditInfo
     {
         [DisplayName("No")]

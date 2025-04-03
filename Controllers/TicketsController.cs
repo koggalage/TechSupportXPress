@@ -178,27 +178,36 @@ namespace TechSupportXPress.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(TicketViewModel ticketvm, IFormFile attachment)
+        public async Task<IActionResult> Create(TicketCreateViewModel ticketvm)
         {
+            if (!ModelState.IsValid)
+            {
+                ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
+                    .Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
+
+                ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
+
+                return View(ticketvm);
+            }
+
+            var attachment = ticketvm.Attachment;
+
+            string filename = string.Empty;
+
             if (attachment != null && attachment.Length > 0)
             {
-                // Ensure the "uploads" folder exists inside wwwroot
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
                 if (!Directory.Exists(uploadsFolder))
                     Directory.CreateDirectory(uploadsFolder);
 
-                // Clean and create unique filename
-                var filename = "Ticket_Attachment_" + DateTime.Now.ToString("yyyyMMddHHmmss") + "_" + Path.GetFileName(attachment.FileName);
+                filename = "Ticket_Attachment_" + DateTime.Now.ToString("yyyyMMddHHmmss") + "_" + Path.GetFileName(attachment.FileName);
                 var filePath = Path.Combine(uploadsFolder, filename);
 
                 using var stream = new FileStream(filePath, FileMode.Create);
                 await attachment.CopyToAsync(stream);
-
-                ticketvm.Attachment = filename;
             }
 
-            var pendingStatus = await _context
-                .SystemCodeDetails
+            var pendingStatus = await _context.SystemCodeDetails
                 .Include(x => x.SystemCode)
                 .FirstOrDefaultAsync(x => x.SystemCode.Code == "ResolutionStatus" && x.Description == "Pending");
 
@@ -211,7 +220,7 @@ namespace TechSupportXPress.Controllers
                 StatusId = pendingStatus.Id,
                 PriorityId = ticketvm.PriorityId,
                 SubCategoryId = ticketvm.SubCategoryId,
-                Attachment = ticketvm.Attachment,
+                Attachment = filename,
                 CreatedById = userId,
                 CreatedOn = DateTime.Now
             };
@@ -219,7 +228,6 @@ namespace TechSupportXPress.Controllers
             _context.Add(ticket);
             await _context.SaveChangesAsync();
 
-            //Audit Trail
             var activity = new AuditTrail
             {
                 Action = "Create",
@@ -233,12 +241,12 @@ namespace TechSupportXPress.Controllers
             _context.Add(activity);
             await _context.SaveChangesAsync();
 
-            TempData["MESSAGE"] = "Ticket Details successfully Created";
+            TempData["MESSAGE"] = "Ticket successfully created";
 
             var adminRoleId = await _context.Roles
-            .Where(r => r.Name == "ADMIN")
-            .Select(r => r.Id)
-            .FirstOrDefaultAsync();
+                .Where(r => r.Name == "ADMIN")
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
 
             var adminUsers = await _context.Users
                 .Where(u => _context.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == adminRoleId))
@@ -252,6 +260,8 @@ namespace TechSupportXPress.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+
 
 
         // GET: Tickets/Edit/5
