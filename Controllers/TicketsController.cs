@@ -18,6 +18,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.SignalR;
 using TechSupportXPress.Brokers;
+using TechSupportXPress.Services.Interfaces;
+using TechSupportXPress.Services;
 
 namespace TechSupportXPress.Controllers
 {
@@ -28,17 +30,36 @@ namespace TechSupportXPress.Controllers
         private readonly IConfiguration _configuration;
         private readonly IHubContext<NotificationHub> _hubContext;
 
+        private readonly ITicketService _ticketService;
+        private readonly IDropdownService _dropdownService;
+        private readonly INotificationService _notificationService;
+        private readonly IFileService _fileService;
+        private readonly IAuditService _auditService;
+        private readonly ICommentService _commentService;
+
         public TicketsController(
             ApplicationDbContext context,
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
-            IHubContext<NotificationHub> hubContext
+            IHubContext<NotificationHub> hubContext,
+            ITicketService ticketService,
+            IDropdownService dropdownService,
+            INotificationService notificationService,
+            IFileService fileService,
+            IAuditService auditService,
+            ICommentService commentService
             )
         {
             _context = context;
             _configuration = configuration;
             _userManager = userManager;
             _hubContext = hubContext;
+            _ticketService = ticketService;
+            _dropdownService = dropdownService;
+            _notificationService = notificationService;
+            _fileService = fileService;
+            _auditService = auditService;
+            _commentService = commentService;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -51,118 +72,50 @@ namespace TechSupportXPress.Controllers
 
         public async Task<IActionResult> Index(TicketViewModel vm)
         {
-            var currentUserId = _userManager.GetUserId(User);
-            var currentUser = await _userManager.GetUserAsync(User);
-            var userRoles = await _userManager.GetRolesAsync(currentUser);
-
-            var alltickets = _context.Tickets
-                .Include(t => t.CreatedBy)
-                .Include(t => t.SubCategory)
-                .Include(t => t.Priority)
-                .Include(t => t.Status)
-                .Include(t => t.TicketComments)
-                .OrderBy(x => x.CreatedOn)
-                .OrderByDescending(a => a.CreatedOn)
-                .AsQueryable();
-
-            // 🔐 Apply role-based access control
-            if (userRoles.Contains("ADMIN"))
+            try
             {
-                // No filter, show all
+                var user = await _userManager.GetUserAsync(User);
+                var userId = _userManager.GetUserId(User);
+                var roles = await _userManager.GetRolesAsync(user);
+
+                vm = await _ticketService.GetFilteredTicketsAsync(userId, roles, vm);
+
+                ViewData["PriorityId"] = await _dropdownService.GetPrioritiesAsync();
+                ViewData["CategoryId"] = await _dropdownService.GetCategoriesAsync();
+                ViewData["CreatedById"] = await _dropdownService.GetUsersAsync();
+                ViewData["StatusId"] = await _dropdownService.GetStatusesAsync();
+
+                return View(vm);
             }
-            else if (userRoles.Contains("SUPPORT"))
+            catch (Exception)
             {
-                alltickets = alltickets.Where(t => t.AssignedToId == currentUserId);
+
+                throw;
             }
-            else if (userRoles.Contains("USER"))
-            {
-                alltickets = alltickets.Where(t => t.CreatedById == currentUserId);
-            }
-
-            // 🔍 Apply filter parameters
-            if (vm != null)
-            {
-                if (!string.IsNullOrEmpty(vm.Title))
-                {
-                    alltickets = alltickets.Where(x => x.Title.Contains(vm.Title));
-                }
-
-                if (!string.IsNullOrEmpty(vm.CreatedById))
-                {
-                    alltickets = alltickets.Where(x => x.CreatedById == vm.CreatedById);
-                }
-
-                if (vm.StatusId > 0)
-                {
-                    alltickets = alltickets.Where(x => x.StatusId == vm.StatusId);
-                }
-
-                if (vm.PriorityId > 0)
-                {
-                    alltickets = alltickets.Where(x => x.PriorityId == vm.PriorityId);
-                }
-
-                if (vm.CategoryId > 0)
-                {
-                    alltickets = alltickets.Where(x => x.SubCategory.CategoryId == vm.CategoryId);
-                }
-            }
-
-            vm.Tickets = await alltickets.ToListAsync();
-
-            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
-
-            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
-
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
-
-            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-
-            return View(vm);
         }
 
 
         // GET: Tickets/Details/5
-        public async Task<IActionResult> Details(int? id, TicketViewModel vm)
+        public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
+            try
             {
-                return NotFound();
+                if (id == null)
+                    return NotFound();
+
+                var vm = await _ticketService.GetTicketDetailsViewModelAsync(id.Value);
+                if (vm == null)
+                    return NotFound();
+
+                return View(vm);
             }
-
-            vm.TicketDetails = await _context.Tickets
-               .Include(t => t.CreatedBy)
-               .Include(t => t.SubCategory)
-               .Include(t => t.Status)
-               .Include(t => t.Priority)
-               .FirstOrDefaultAsync(m => m.Id == id);
-
-
-
-            if (vm.TicketDetails == null)
+            catch (Exception)
             {
-                return NotFound();
+
+                throw;
             }
-
-            vm.TicketComments = await _context.Comments
-               .Include(t => t.CreatedBy)
-               .Include(t => t.Ticket)
-               .Where(t => t.TicketId == id)
-               .ToListAsync();
-
-            vm.TicketResolutions = await _context.TicketResolutions
-               .Include(t => t.CreatedBy)
-               .Include(t => t.Ticket)
-               .Include(t => t.Status)
-               .Where(t => t.TicketId == id)
-               .ToListAsync();
-
-            return View(vm);
         }
+
 
         // GET: Tickets/Create
         public IActionResult Create()
@@ -180,121 +133,60 @@ namespace TechSupportXPress.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(TicketCreateViewModel ticketvm)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
-                    .Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
+                if (!ModelState.IsValid)
+                {
+                    ViewData["PriorityId"] = await _dropdownService.GetPrioritiesAsync();
+                    ViewData["CategoryId"] = await _dropdownService.GetCategoriesAsync();
+                    return View(ticketvm);
+                }
 
-                ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var attachmentFileName = await _fileService.SaveAttachmentAsync(ticketvm.Attachment);
 
-                return View(ticketvm);
+                var ticketId = await _ticketService.CreateTicketAsync(ticketvm, userId, attachmentFileName);
+
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+                await _auditService.LogAsync("Create", userId, "Tickets", "Tickets", ipAddress);
+                await _notificationService.NotifyAdminsAsync($"New Ticket #{ticketId} created: {ticketvm.Title}");
+
+                TempData["MESSAGE"] = "Ticket successfully created";
+                return RedirectToAction(nameof(Index));
             }
-
-            var attachment = ticketvm.Attachment;
-
-            string filename = string.Empty;
-
-            if (attachment != null && attachment.Length > 0)
+            catch (Exception)
             {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
 
-                filename = "Ticket_Attachment_" + DateTime.Now.ToString("yyyyMMddHHmmss") + "_" + Path.GetFileName(attachment.FileName);
-                var filePath = Path.Combine(uploadsFolder, filename);
-
-                using var stream = new FileStream(filePath, FileMode.Create);
-                await attachment.CopyToAsync(stream);
+                throw;
             }
-
-            var pendingStatus = await _context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .FirstOrDefaultAsync(x => x.SystemCode.Code == "ResolutionStatus" && x.Description == "Pending");
-
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            Ticket ticket = new()
-            {
-                Title = ticketvm.Title,
-                Description = ticketvm.Description,
-                StatusId = pendingStatus.Id,
-                PriorityId = ticketvm.PriorityId,
-                SubCategoryId = ticketvm.SubCategoryId,
-                Attachment = filename,
-                CreatedById = userId,
-                CreatedOn = DateTime.Now
-            };
-
-            _context.Add(ticket);
-            await _context.SaveChangesAsync();
-
-            var activity = new AuditTrail
-            {
-                Action = "Create",
-                TimeStamp = DateTime.Now,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserId = userId,
-                Module = "Tickets",
-                AffectedTable = "Tickets"
-            };
-
-            _context.Add(activity);
-            await _context.SaveChangesAsync();
-
-            TempData["MESSAGE"] = "Ticket successfully created";
-
-            var adminRoleId = await _context.Roles
-                .Where(r => r.Name == "ADMIN")
-                .Select(r => r.Id)
-                .FirstOrDefaultAsync();
-
-            var adminUsers = await _context.Users
-                .Where(u => _context.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == adminRoleId))
-                .ToListAsync();
-
-            foreach (var admin in adminUsers)
-            {
-                await _hubContext.Clients.User(admin.Id).SendAsync("ReceiveNotification",
-                    $"New Ticket #{ticket.Id} created: {ticket.Title}");
-            }
-
-            return RedirectToAction(nameof(Index));
         }
-
-
 
 
         // GET: Tickets/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-                return NotFound();
-
-            var ticket = await _context.Tickets
-                .Include(t => t.SubCategory)
-                .FirstOrDefaultAsync(t => t.Id == id);
-
-            if (ticket == null)
-                return NotFound();
-
-            var viewModel = new TicketViewModel
+            try
             {
-                Id = ticket.Id,
-                Title = ticket.Title,
-                Description = ticket.Description,
-                PriorityId = ticket.PriorityId,
-                CategoryId = ticket.SubCategory.CategoryId,
-                SubCategoryId = ticket.SubCategoryId,
-                Attachment = ticket.Attachment
-            };
+                if (id == null)
+                    return NotFound();
 
-            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "Priority"), "Id", "Description", ticket.PriorityId);
-            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name", viewModel.CategoryId);
-            ViewData["SubCategoryId"] = new SelectList(_context.TicketSubCategories.Where(s => s.CategoryId == viewModel.CategoryId), "Id", "Name", viewModel.SubCategoryId);
+                var vm = await _ticketService.GetTicketEditViewModelAsync(id.Value);
+                if (vm == null)
+                    return NotFound();
 
-            return View(viewModel);
+                ViewData["PriorityId"] = await _dropdownService.GetPrioritiesAsync();
+                ViewData["CategoryId"] = await _dropdownService.GetCategoriesAsync();
+                ViewData["SubCategoryId"] = await _dropdownService.GetSubCategoriesByCategoryIdAsync(vm.CategoryId.Value);
+
+                return View(vm);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
-
 
         // POST: Tickets/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
@@ -303,90 +195,78 @@ namespace TechSupportXPress.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, TicketViewModel model, IFormFile attachment)
         {
-            if (id != model.Id)
-                return NotFound();
-
-            var ticket = await _context.Tickets.FindAsync(id);
-            if (ticket == null)
-                return NotFound();
-
-            // Handle file upload
-            if (attachment != null && attachment.Length > 0)
-            {
-                // Ensure the folder exists
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
-
-                // Save with timestamp to avoid conflicts
-                var fileName = "Ticket_" + DateTime.Now.ToString("yyyyMMddHHmmss") + "_" + Path.GetFileName(attachment.FileName);
-                var filePath = Path.Combine(uploadsFolder, fileName);
-
-                using var stream = new FileStream(filePath, FileMode.Create);
-                await attachment.CopyToAsync(stream);
-
-                ticket.Attachment = fileName;
-            }
-
-            // Update ticket properties
-            ticket.Title = model.Title;
-            ticket.Description = model.Description;
-            ticket.PriorityId = model.PriorityId;
-            ticket.SubCategoryId = model.SubCategoryId;
-            ticket.ModifiedOn = DateTime.Now;
-            ticket.ModifiedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
             try
             {
-                _context.Update(ticket);
-                await _context.SaveChangesAsync();
+                if (id != model.Id)
+                    return NotFound();
+
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+                var updated = await _ticketService.UpdateTicketAsync(id, model, attachment, userId);
+
+                if (!updated)
+                    return NotFound();
+
+                await _auditService.LogAsync("Update", userId, "Tickets", "Tickets", ipAddress);
 
                 TempData["MESSAGE"] = "Ticket updated successfully.";
                 return RedirectToAction(nameof(Index));
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception)
             {
-                if (!TicketExists(ticket.Id))
+
+                throw;
+            }
+        }
+
+        // GET: Tickets/Delete/5
+        public async Task<IActionResult> Delete(int? id)
+        {
+            try
+            {
+                if (id == null)
                     return NotFound();
+
+                var ticket = await _ticketService.GetTicketForDeleteViewAsync(id.Value);
+
+                if (ticket == null)
+                    return NotFound();
+
+                return View(ticket);
+            }
+            catch (Exception)
+            {
 
                 throw;
             }
         }
 
 
-
-        // GET: Tickets/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var ticket = await _context.Tickets
-                .Include(t => t.CreatedBy)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (ticket == null)
-            {
-                return NotFound();
-            }
-
-            return View(ticket);
-        }
-
         // POST: Tickets/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var ticket = await _context.Tickets.FindAsync(id);
-            if (ticket != null)
+            try
             {
-                _context.Tickets.Remove(ticket);
-            }
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+                var result = await _ticketService.DeleteTicketAsync(id);
+                if (!result)
+                    return NotFound();
+
+                await _auditService.LogAsync("Delete", userId, "Tickets", "Tickets", ipAddress);
+
+                TempData["MESSAGE"] = "Ticket deleted successfully.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         [HttpPost]
@@ -395,909 +275,321 @@ namespace TechSupportXPress.Controllers
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                Comment newcomment = new();
-                newcomment.TicketId = id;
-                newcomment.CreatedOn = DateTime.Now;
-                newcomment.CreatedById = userId;
-                newcomment.Description = vm.CommentDescription;
-                _context.Add(newcomment);
-                await _context.SaveChangesAsync();
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-                //Audit Log
-                var activity = new AuditTrail
-                {
-                    Action = "Create",
-                    TimeStamp = DateTime.Now,
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    UserId = userId,
-                    Module = "Comments",
-                    AffectedTable = "Comments"
-                };
+                await _commentService.AddCommentAsync(id, userId, vm.CommentDescription);
 
-                _context.Add(activity);
-                await _context.SaveChangesAsync();
+                await _auditService.LogAsync("Create", userId, "Comments", "Comments", ipAddress);
 
-
-                TempData["MESSAGE"] = "Comments Details successfully Created";
-
+                TempData["MESSAGE"] = "Comment added successfully";
                 return RedirectToAction("Details", new { id = id });
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Comment Details could not be Created" + ex.Message;
+                TempData["Error"] = "Failed to add comment: " + ex.Message;
                 return View(vm);
             }
         }
 
-        public async Task<IActionResult> Resolve(int? id, TicketViewModel vm)
+        public async Task<IActionResult> Resolve(int? id)
         {
-            if (id == null)
+            try
             {
-                return NotFound();
+                if (id == null)
+                    return NotFound();
+
+                var vm = await _ticketService.GetTicketResolveViewModelAsync(id.Value);
+                if (vm?.TicketDetails == null)
+                    return NotFound();
+
+                ViewBag.NextStatus = vm.NextStatus;
+                ViewBag.NextStatusId = vm.StatusId;
+
+                return View(vm);
             }
-
-            vm.TicketDetails = await _context.Tickets
-               .Include(t => t.CreatedBy)
-               .Include(t => t.SubCategory)
-               .Include(t => t.Status)
-               .Include(t => t.Priority)
-               .Include(t => t.AssignedTo)
-               .FirstOrDefaultAsync(m => m.Id == id);
-
-            vm.TicketComments = await _context.Comments
-                .Include(t => t.CreatedBy)
-                .Include(t => t.Ticket)
-                .Where(t => t.TicketId == id)
-                .ToListAsync();
-
-            vm.TicketResolutions = await _context.TicketResolutions
-               .Include(t => t.CreatedBy)
-               .Include(t => t.Ticket)
-               .Include(t => t.Status)
-               .Where(t => t.TicketId == id)
-               .ToListAsync();
-
-            string nextStatus = vm.TicketDetails.Status.Code switch
+            catch (Exception)
             {
-                "Pending" => "Assigned",
-                "Assigned" => "Resolved",
-                "Resolved" => "Closed",
-                "Closed" => "ReOpened",
-                "ReOpened" => "Assigned",
-                _ => "N/A"
-            };
 
-            var nextStatusObj = await _context.SystemCodeDetails
-     .Include(x => x.SystemCode)
-     .FirstOrDefaultAsync(x => x.SystemCode.Code == "ResolutionStatus" && x.Description == nextStatus);
-
-            ViewBag.NextStatus = nextStatusObj?.Description;
-            ViewBag.NextStatusId = nextStatusObj?.Id;
-
-
-            if (vm.TicketDetails == null)
-            {
-                return NotFound();
+                throw;
             }
-
-
-            //ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-
-            return View(vm);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> ResolvedConfirmed(int id, TicketViewModel vm)
         {
-            //Logged In User
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            TicketResolution resolution = new();
-            resolution.TicketId = id;
-            resolution.StatusId = vm.StatusId;
-            resolution.CreatedOn = DateTime.Now;
-            resolution.CreatedById = userId;
-            resolution.Description = vm.CommentDescription;
-            _context.Add(resolution);
-
-            var ticket = await _context.Tickets
-                .Where(x => x.Id == id)
-                .FirstOrDefaultAsync();
-            ticket.StatusId = vm.StatusId;
-            _context.Update(ticket);
-
-            await _context.SaveChangesAsync();
-
-            //Audit Log
-            var activity = new AuditTrail
+            try
             {
-                Action = "Update",
-                TimeStamp = DateTime.Now,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserId = userId,
-                Module = "Ticket Resolution",
-                AffectedTable = "TicketResolution"
-            };
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            _context.Add(activity);
-            await _context.SaveChangesAsync();
+                var result = await _ticketService.ResolveTicketAsync(id, vm.StatusId, vm.CommentDescription, userId);
+                if (!result)
+                    return NotFound();
 
-            TempData["MESSAGE"] = $"Ticket status changed to {vm.NextStatus} successfully Created";
+                await _auditService.LogAsync("Update", userId, "Ticket Resolution", "TicketResolution", ipAddress);
 
-            // Send Notification via SignalR
-            var currentUser = await _context.Users.FindAsync(userId);
-            var roles = await _userManager.GetRolesAsync(currentUser);
+                TempData["MESSAGE"] = $"Ticket status changed to {vm.NextStatus}";
 
-            if (roles.Contains("SUPPORT"))
-            {
-                // Notify admin when support resolves a ticket
-                var adminRoleId = await _context.Roles
-                    .Where(r => r.Name == "ADMIN")
-                    .Select(r => r.Id)
-                    .FirstOrDefaultAsync();
+                var currentUser = await _userManager.FindByIdAsync(userId);
+                var roles = await _userManager.GetRolesAsync(currentUser);
 
-                var adminUsers = await _context.Users
-                    .Where(u => _context.UserRoles.Any(ur => ur.RoleId == adminRoleId && ur.UserId == u.Id))
-                    .ToListAsync();
-
-                foreach (var admin in adminUsers)
+                if (roles.Contains("SUPPORT"))
                 {
-                    await _hubContext.Clients.User(admin.Id).SendAsync("ReceiveNotification",
-                        $"Support updated Ticket #{ticket.Id} status to {vm.NextStatus}");
+                    await _notificationService.NotifyAdminsAsync($"Support updated Ticket #{id} status to {vm.NextStatus}");
                 }
-            }
 
-            if (roles.Contains("ADMIN") || roles.Contains("SUPPORT"))
+                if (roles.Contains("SUPPORT") || roles.Contains("ADMIN"))
+                {
+                    var ticket = await _ticketService.GetTicketByIdAsync(id);
+                    if (!string.IsNullOrEmpty(ticket?.CreatedById))
+                    {
+                        await _notificationService.NotifyUserAsync(ticket.CreatedById, $"Your Ticket #{id} has been updated to status: {vm.NextStatus}");
+                    }
+                }
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception)
             {
-                // Notify ticket creator
-                await _hubContext.Clients.User(ticket.CreatedById).SendAsync("ReceiveNotification",
-                    $"Your Ticket #{ticket.Id} has been updated to status: {vm.NextStatus}");
-            }
 
-            //return RedirectToAction("Resolve", new { id = id });
-            return RedirectToAction(nameof(Index));
+                throw;
+            }
         }
 
-        public async Task<IActionResult> Close(int? id, TicketViewModel vm)
+        public async Task<IActionResult> Close(int? id)
         {
-            if (id == null)
+            try
             {
-                return NotFound();
+                if (id == null)
+                    return NotFound();
+
+                var vm = await _ticketService.GetTicketCloseViewModelAsync(id.Value);
+                if (vm?.TicketDetails == null)
+                    return NotFound();
+
+                ViewData["StatusId"] = await _dropdownService.GetResolutionStatusesAsync();
+                return View(vm);
             }
-
-            vm.TicketDetails = await _context.Tickets
-               .Include(t => t.CreatedBy)
-               .Include(t => t.SubCategory)
-               .Include(t => t.Status)
-               .Include(t => t.Priority)
-               .Include(t => t.AssignedTo)
-               .FirstOrDefaultAsync(m => m.Id == id);
-
-            vm.TicketComments = await _context.Comments
-                .Include(t => t.CreatedBy)
-                .Include(t => t.Ticket)
-                .Where(t => t.TicketId == id)
-                .ToListAsync();
-
-            vm.TicketResolutions = await _context.TicketResolutions
-               .Include(t => t.CreatedBy)
-               .Include(t => t.Ticket)
-               .Include(t => t.Status)
-               .Where(t => t.TicketId == id)
-               .ToListAsync();
-
-
-            if (vm.TicketDetails == null)
+            catch (Exception)
             {
-                return NotFound();
+
+                throw;
             }
-
-
-            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-
-            return View(vm);
         }
 
+        [HttpPost]
         public async Task<IActionResult> ClosedConfirmed(int id, TicketViewModel vm)
         {
-
-            var closedstatus = await _context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Closed")
-                .FirstOrDefaultAsync();
-
-            //Logged In User
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            TicketResolution resolution = new();
-            resolution.TicketId = id;
-            resolution.StatusId = closedstatus.Id;
-            resolution.CreatedOn = DateTime.Now;
-            resolution.CreatedById = userId;
-            resolution.Description = "Ticket Closed";
-            _context.Add(resolution);
-
-            var ticket = await _context.Tickets
-                .Where(x => x.Id == id)
-                .FirstOrDefaultAsync();
-
-            ticket.StatusId = closedstatus.Id;
-            _context.Update(ticket);
-
-            await _context.SaveChangesAsync();
-
-            //Audit Log
-            var activity = new AuditTrail
+            try
             {
-                Action = "Closed",
-                TimeStamp = DateTime.Now,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserId = userId,
-                Module = "Ticket Resolution",
-                AffectedTable = "TicketResolution"
-            };
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            _context.Add(activity);
-            await _context.SaveChangesAsync();
+                var success = await _ticketService.CloseTicketAsync(id, userId);
+                if (!success)
+                    return NotFound();
 
-            TempData["MESSAGE"] = "Ticket Closed successfully";
+                await _auditService.LogAsync("Closed", userId, "Ticket Resolution", "TicketResolution", ipAddress);
 
-            if (!string.IsNullOrEmpty(ticket.CreatedById))
-            {
-                await _hubContext.Clients.User(ticket.CreatedById).SendAsync("ReceiveNotification",
-                    $"Your ticket #{ticket.Id} has been closed.");
+                TempData["MESSAGE"] = "Ticket Closed successfully";
+
+                var ticket = await _ticketService.GetTicketByIdAsync(id);
+
+                if (!string.IsNullOrEmpty(ticket?.CreatedById))
+                {
+                    await _notificationService.NotifyUserAsync(ticket.CreatedById,
+                        $"Your ticket #{ticket.Id} has been closed.");
+                }
+
+                if (!string.IsNullOrEmpty(ticket?.AssignedToId))
+                {
+                    await _notificationService.NotifyUserAsync(ticket.AssignedToId,
+                        $"Ticket #{ticket.Id} assigned to you has been closed.");
+                }
+
+                return RedirectToAction(nameof(Index));
             }
-
-            if (!string.IsNullOrEmpty(ticket.AssignedToId))
+            catch (Exception)
             {
-                await _hubContext.Clients.User(ticket.AssignedToId).SendAsync("ReceiveNotification",
-                    $"Ticket #{ticket.Id} assigned to you has been closed.");
-            }
 
-            //return RedirectToAction("Resolve", new { id = id });
-            return RedirectToAction(nameof(Index));
+                throw;
+            }
         }
 
-        public async Task<IActionResult> ReOpen(int? id, TicketViewModel vm)
+
+        public async Task<IActionResult> ReOpen(int? id)
         {
-            if (id == null)
+            try
             {
-                return NotFound();
+                if (id == null)
+                    return NotFound();
+
+                var vm = await _ticketService.GetTicketReOpenViewModelAsync(id.Value);
+                if (vm?.TicketDetails == null)
+                    return NotFound();
+
+                ViewData["StatusId"] = await _dropdownService.GetResolutionStatusesAsync();
+                return View(vm);
             }
-
-            vm.TicketDetails = await _context.Tickets
-               .Include(t => t.CreatedBy)
-               .Include(t => t.SubCategory)
-               .Include(t => t.Status)
-               .Include(t => t.Priority)
-               .Include(t => t.AssignedTo)
-               .FirstOrDefaultAsync(m => m.Id == id);
-
-            vm.TicketComments = await _context.Comments
-                .Include(t => t.CreatedBy)
-                .Include(t => t.Ticket)
-                .Where(t => t.TicketId == id)
-                .ToListAsync();
-
-            vm.TicketResolutions = await _context.TicketResolutions
-               .Include(t => t.CreatedBy)
-               .Include(t => t.Ticket)
-               .Include(t => t.Status)
-               .Where(t => t.TicketId == id)
-               .ToListAsync();
-
-
-            if (vm.TicketDetails == null)
+            catch (Exception)
             {
-                return NotFound();
+
+                throw;
             }
-
-
-            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-
-            return View(vm);
         }
 
         [HttpPost]
         public async Task<IActionResult> ReOpenConfirmed(int id, TicketViewModel vm)
         {
-
-            var closedstatus = await _context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "ReOpened")
-                .FirstOrDefaultAsync();
-
-            //Logged In User
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            TicketResolution resolution = new();
-            resolution.TicketId = id;
-            resolution.StatusId = closedstatus.Id;
-            resolution.CreatedOn = DateTime.Now;
-            resolution.CreatedById = userId;
-            resolution.Description = "Ticket Re-Opened";
-            _context.Add(resolution);
-
-            var ticket = await _context.Tickets
-                .Where(x => x.Id == id)
-                .FirstOrDefaultAsync();
-
-            ticket.StatusId = closedstatus.Id;
-            _context.Update(ticket);
-
-            await _context.SaveChangesAsync();
-
-            //Audit Log
-            var activity = new AuditTrail
+            try
             {
-                Action = "Re-Open",
-                TimeStamp = DateTime.Now,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserId = userId,
-                Module = "Ticket Resolution",
-                AffectedTable = "TicketResolution"
-            };
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            _context.Add(activity);
-            await _context.SaveChangesAsync();
+                var success = await _ticketService.ReOpenTicketAsync(id, userId);
+                if (!success)
+                    return NotFound();
 
-            TempData["MESSAGE"] = "Ticket Re-Opened successfully";
+                await _auditService.LogAsync("Re-Open", userId, "Ticket Resolution", "TicketResolution", ipAddress);
 
-            var adminRoleId = await _context.Roles
-            .Where(r => r.Name == "ADMIN")
-            .Select(r => r.Id)
-            .FirstOrDefaultAsync();
+                TempData["MESSAGE"] = "Ticket Re-Opened successfully";
 
-            var adminUsers = await _context.Users
-                .Where(u => _context.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == adminRoleId))
-                .ToListAsync();
+                var ticket = await _ticketService.GetTicketByIdAsync(id);
 
-            foreach (var admin in adminUsers)
-            {
-                await _hubContext.Clients.User(admin.Id).SendAsync("ReceiveNotification",
-                    $"Ticket #{ticket.Id} has been re-opened by the user.");
+                if (!string.IsNullOrEmpty(ticket?.AssignedToId))
+                {
+                    await _notificationService.NotifyUserAsync(ticket.AssignedToId,
+                        $"Ticket #{ticket.Id}: {ticket.Title} has been re-opened.");
+                }
+
+                await _notificationService.NotifyAdminsAsync($"Ticket #{ticket.Id} has been re-opened by the user.");
+
+                return RedirectToAction(nameof(Index));
             }
-
-            if (!string.IsNullOrEmpty(ticket.AssignedToId))
+            catch (Exception)
             {
-                await _hubContext.Clients.User(ticket.AssignedToId).SendAsync("ReceiveNotification",
-                    $"Ticket #{ticket.Id}: {ticket.Title} has been re-opened.");
-            }
 
-            //return RedirectToAction("Resolve", new { id = id });
-            return RedirectToAction(nameof(Index));
+                throw;
+            }
         }
 
-        public async Task<IActionResult> TicketAssignment(int? id, TicketViewModel vm)
+
+        public async Task<IActionResult> TicketAssignment(int? id)
         {
-            if (id == null)
+            try
             {
-                return NotFound();
+                if (id == null)
+                    return NotFound();
+
+                var vm = await _ticketService.GetTicketAssignmentViewModelAsync(id.Value);
+                if (vm?.TicketDetails == null)
+                    return NotFound();
+
+                ViewData["StatusId"] = await _dropdownService.GetResolutionStatusesAsync();
+                ViewData["UserId"] = await _dropdownService.GetSupportUsersAsync();
+
+                return View(vm);
             }
-
-            vm.TicketDetails = await _context.Tickets
-               .Include(t => t.CreatedBy)
-               .Include(t => t.SubCategory)
-               .Include(t => t.Status)
-               .Include(t => t.Priority)
-               .Include(t => t.AssignedTo)
-               .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (vm.TicketDetails == null)
+            catch (Exception)
             {
-                return NotFound();
+
+                throw;
             }
-
-            vm.TicketComments = await _context.Comments
-                .Include(t => t.CreatedBy)
-                .Include(t => t.Ticket)
-                .Where(t => t.TicketId == id)
-                .ToListAsync();
-
-            vm.TicketResolutions = await _context.TicketResolutions
-               .Include(t => t.CreatedBy)
-               .Include(t => t.Ticket)
-               .Include(t => t.Status)
-               .Where(t => t.TicketId == id)
-               .ToListAsync();
-
-            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails.Include(x => x.SystemCode).Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-
-            // Get the SUPPORT role ID
-            var supportRoleId = await _context.Roles
-                .Where(r => r.Name == "SUPPORT")
-                .Select(r => r.Id)
-                .FirstOrDefaultAsync();
-
-            // Get users who are assigned to the SUPPORT role
-            var supportUsers = await _context.Users
-                .Where(u => _context.UserRoles
-                    .Any(ur => ur.UserId == u.Id && ur.RoleId == supportRoleId))
-                .ToListAsync();
-
-            ViewData["UserId"] = new SelectList(supportUsers, "Id", "FullName");
-
-            // ViewData["UserId"] = new SelectList(_context.Users, "Id", "FullName");
-
-            return View(vm);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> AssignedConfirmed(int id, TicketViewModel vm)
         {
-
             try
             {
-                var reassignedstatus = await _context.SystemCodeDetails
-                    .Include(x => x.SystemCode)
-                    .Where(x => x.SystemCode.Code == Constants.SYSTEM_CODE_RESOLUTION_STATUS &&
-                                x.Code == Constants.RESOLUTION_STATUS_ASSIGNED)
-                    .FirstOrDefaultAsync();
-
-                //Logged In User
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                TicketResolution resolution = new();
-                resolution.TicketId = id;
-                resolution.StatusId = reassignedstatus.Id;
-                resolution.CreatedOn = DateTime.Now;
-                resolution.CreatedById = userId;
-                resolution.Description = "Ticket Assigned";
-                _context.Add(resolution);
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-                var ticket = await _context.Tickets
-                    .Where(x => x.Id == id)
-                    .FirstOrDefaultAsync();
+                var success = await _ticketService.AssignTicketAsync(id, vm.AssignedToId, userId);
+                if (!success)
+                    return NotFound();
 
-                ticket.StatusId = reassignedstatus.Id;
-                ticket.AssignedToId = vm.AssignedToId;
-                ticket.AssignedOn = DateTime.Now;
-                _context.Update(ticket);
-
-                await _context.SaveChangesAsync();
-
-                //Audit Log
-                var activity = new AuditTrail
-                {
-                    Action = Constants.RESOLUTION_STATUS_ASSIGNED,
-                    TimeStamp = DateTime.Now,
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    UserId = userId,
-                    Module = "Ticket",
-                    AffectedTable = "Ticket"
-                };
-
-                _context.Add(activity);
-                await _context.SaveChangesAsync();
-
-
+                await _auditService.LogAsync("Assigned", userId, "Ticket", "Ticket", ipAddress);
 
                 TempData["MESSAGE"] = "Ticket Assigned successfully";
 
-                await _hubContext.Clients.User(vm.AssignedToId).SendAsync("ReceiveNotification",
-            $"You have been assigned to Ticket #{ticket.Id}: {ticket.Title}");
+                await _notificationService.NotifyUserAsync(vm.AssignedToId,
+                    $"You have been assigned to Ticket #{id}");
 
-                //return RedirectToAction("Resolve", new { id = id });
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Ticket  could not be assigned" + ex.Message;
-
+                TempData["Error"] = "Ticket could not be assigned: " + ex.Message;
                 return RedirectToAction("TicketAssignment", new { id = id });
             }
         }
 
-
-        //public async Task<IActionResult> AssignedTickets(TicketViewModel vm)
-        //{
-        //    var assignedStatus = await _context
-        //    .SystemCodeDetails
-        //    .Include(x => x.SystemCode)
-        //    .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Assigned")
-        //    .FirstOrDefaultAsync();
-
-        //    var alltickets = _context.Tickets
-        //        .Include(t => t.CreatedBy)
-        //        .Include(t => t.SubCategory)
-        //        .Include(t => t.Priority)
-        //        .Include(t => t.Status)
-        //        .Include(t => t.TicketComments)
-        //        .Where(x => x.StatusId == assignedStatus.Id)
-        //        .OrderBy(x => x.CreatedOn)
-        //        .AsQueryable();
-
-        //    if (vm != null)
-        //    {
-        //        if (!string.IsNullOrEmpty(vm.Title))
-        //        {
-        //            alltickets = alltickets.Where(x => x.Title == vm.Title);
-        //        }
-
-        //        if (!string.IsNullOrEmpty(vm.CreatedById))
-        //        {
-        //            alltickets = alltickets.Where(x => x.CreatedById == vm.CreatedById);
-        //        }
-
-        //        if (vm.StatusId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.StatusId == vm.StatusId);
-        //        }
-
-        //        if (vm.PriorityId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.PriorityId == vm.PriorityId);
-        //        }
-
-        //        if (vm.CategoryId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.SubCategory.CategoryId == vm.CategoryId);
-        //        }
-        //    }
-
-        //    vm.Tickets = await alltickets.ToListAsync();
-
-
-        //    ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
-        //        .Include(x => x.SystemCode)
-        //        .Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
-        //    ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
-        //    ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
-        //    ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails
-        //        .Include(x => x.SystemCode)
-        //        .Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-        //    return View(vm);
-        //}
-
         public async Task<IActionResult> AssignedTickets(TicketViewModel vm)
         {
-            var currentUserId = _userManager.GetUserId(User);
-            var currentUser = await _userManager.GetUserAsync(User);
-            var userRoles = await _userManager.GetRolesAsync(currentUser);
-
-            var assignedStatuses = await _context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "ResolutionStatus" &&
-                            (x.Code == "Assigned" || x.Code == "ReOpened"))
-                .Select(x => x.Id)
-                .ToListAsync();
-
-            var alltickets = _context.Tickets
-                .Include(t => t.CreatedBy)
-                .Include(t => t.SubCategory)
-                .Include(t => t.Priority)
-                .Include(t => t.Status)
-                .Include(t => t.TicketComments)
-                .Where(x => assignedStatuses.Contains(x.StatusId))
-                .OrderByDescending(a => a.CreatedOn)
-                .AsQueryable();
-
-            if (userRoles.Contains("SUPPORT"))
+            try
             {
-                alltickets = alltickets.Where(t => t.AssignedToId == currentUserId);
+                var currentUser = await _userManager.GetUserAsync(User);
+                var resultVm = await _ticketService.GetAssignedTicketsAsync(vm, currentUser);
+
+                ViewData["PriorityId"] = await _dropdownService.GetPrioritiesAsync();
+                ViewData["CategoryId"] = await _dropdownService.GetCategoriesAsync();
+                ViewData["CreatedById"] = await _dropdownService.GetUsersAsync();
+                ViewData["StatusId"] = await _dropdownService.GetResolutionStatusesAsync();
+
+                return View(resultVm);
             }
-            else if (userRoles.Contains("USER"))
+            catch (Exception)
             {
-                alltickets = alltickets.Where(t => t.CreatedById == currentUserId);
+
+                throw;
             }
-
-            if (vm != null)
-            {
-                if (!string.IsNullOrEmpty(vm.Title))
-                    alltickets = alltickets.Where(x => x.Title == vm.Title);
-
-                if (!string.IsNullOrEmpty(vm.CreatedById))
-                    alltickets = alltickets.Where(x => x.CreatedById == vm.CreatedById);
-
-                if (vm.StatusId > 0)
-                    alltickets = alltickets.Where(x => x.StatusId == vm.StatusId);
-
-                if (vm.PriorityId > 0)
-                    alltickets = alltickets.Where(x => x.PriorityId == vm.PriorityId);
-
-                if (vm.CategoryId > 0)
-                    alltickets = alltickets.Where(x => x.SubCategory.CategoryId == vm.CategoryId);
-            }
-
-            vm.Tickets = await alltickets.OrderBy(x => x.CreatedOn).ToListAsync();
-
-            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
-
-            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
-
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
-
-            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-
-            return View(vm);
         }
-
-
-
-        //public async Task<IActionResult> ClosedTickets(TicketViewModel vm)
-        //{
-        //    var closedStatus = await _context
-        //    .SystemCodeDetails
-        //    .Include(x => x.SystemCode)
-        //    .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Closed")
-        //    .FirstOrDefaultAsync();
-
-        //    var alltickets = _context.Tickets
-        //       .Include(t => t.CreatedBy)
-        //       .Include(t => t.SubCategory)
-        //       .Include(t => t.Priority)
-        //       .Include(t => t.Status)
-        //       .Include(t => t.TicketComments)
-        //       .Where(x => x.StatusId == closedStatus.Id)
-        //       .OrderBy(x => x.CreatedOn)
-        //       .AsQueryable();
-
-        //    if (vm != null)
-        //    {
-        //        if (!string.IsNullOrEmpty(vm.Title))
-        //        {
-        //            alltickets = alltickets.Where(x => x.Title == vm.Title);
-        //        }
-
-        //        if (!string.IsNullOrEmpty(vm.CreatedById))
-        //        {
-        //            alltickets = alltickets.Where(x => x.CreatedById == vm.CreatedById);
-        //        }
-
-        //        if (vm.StatusId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.StatusId == vm.StatusId);
-        //        }
-
-        //        if (vm.PriorityId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.PriorityId == vm.PriorityId);
-        //        }
-
-        //        if (vm.CategoryId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.SubCategory.CategoryId == vm.CategoryId);
-        //        }
-        //    }
-
-        //    vm.Tickets = await alltickets.ToListAsync();
-
-
-        //    ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
-        //        .Include(x => x.SystemCode)
-        //        .Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
-        //    ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
-        //    ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
-        //    ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails
-        //        .Include(x => x.SystemCode)
-        //        .Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-        //    return View(vm);
-        //}
 
 
         public async Task<IActionResult> ClosedTickets(TicketViewModel vm)
         {
-            var currentUserId = _userManager.GetUserId(User);
-            var currentUser = await _userManager.GetUserAsync(User);
-            var userRoles = await _userManager.GetRolesAsync(currentUser);
-
-            var closedStatus = await _context
-                .SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Closed")
-                .FirstOrDefaultAsync();
-
-            var alltickets = _context.Tickets
-                .Include(t => t.CreatedBy)
-                .Include(t => t.SubCategory)
-                .Include(t => t.Priority)
-                .Include(t => t.Status)
-                .Include(t => t.TicketComments)
-                .Where(x => x.StatusId == closedStatus.Id)
-                .OrderByDescending(a => a.CreatedOn)
-                .AsQueryable();
-
-            // 🔐 Apply role-based access
-            if (userRoles.Contains("ADMIN"))
+            try
             {
-                // Show all
+                var currentUser = await _userManager.GetUserAsync(User);
+                var resultVm = await _ticketService.GetClosedTicketsAsync(vm, currentUser);
+
+                ViewData["PriorityId"] = await _dropdownService.GetPrioritiesAsync();
+                ViewData["CategoryId"] = await _dropdownService.GetCategoriesAsync();
+                ViewData["CreatedById"] = await _dropdownService.GetUsersAsync();
+                ViewData["StatusId"] = await _dropdownService.GetResolutionStatusesAsync();
+
+                return View(resultVm);
             }
-            else if (userRoles.Contains("SUPPORT"))
+            catch (Exception)
             {
-                alltickets = alltickets.Where(t => t.AssignedToId == currentUserId);
+
+                throw;
             }
-            else if (userRoles.Contains("USER"))
-            {
-                alltickets = alltickets.Where(t => t.CreatedById == currentUserId);
-            }
-
-            // 🔍 Apply filters if provided
-            if (vm != null)
-            {
-                if (!string.IsNullOrEmpty(vm.Title))
-                {
-                    alltickets = alltickets.Where(x => x.Title == vm.Title);
-                }
-
-                if (!string.IsNullOrEmpty(vm.CreatedById))
-                {
-                    alltickets = alltickets.Where(x => x.CreatedById == vm.CreatedById);
-                }
-
-                if (vm.StatusId > 0)
-                {
-                    alltickets = alltickets.Where(x => x.StatusId == vm.StatusId);
-                }
-
-                if (vm.PriorityId > 0)
-                {
-                    alltickets = alltickets.Where(x => x.PriorityId == vm.PriorityId);
-                }
-
-                if (vm.CategoryId > 0)
-                {
-                    alltickets = alltickets.Where(x => x.SubCategory.CategoryId == vm.CategoryId);
-                }
-            }
-
-            vm.Tickets = await alltickets.OrderBy(x => x.CreatedOn).ToListAsync();
-
-            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
-
-            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
-
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
-
-            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-
-            return View(vm);
         }
 
 
-        //public async Task<IActionResult> ResolvedTickets(TicketViewModel vm)
-        //{
-        //    var resolvedStatus = await _context
-        //    .SystemCodeDetails
-        //    .Include(x => x.SystemCode)
-        //    .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Resolved")
-        //    .FirstOrDefaultAsync();
-
-        //    var alltickets = _context.Tickets
-        //        .Include(t => t.CreatedBy)
-        //        .Include(t => t.SubCategory)
-        //        .Include(t => t.Priority)
-        //        .Include(t => t.Status)
-        //        .Include(t => t.TicketComments)
-        //        .Where(x => x.StatusId == resolvedStatus.Id)
-        //        .OrderBy(x => x.CreatedOn)
-        //        .AsQueryable();
-
-        //    if (vm != null)
-        //    {
-        //        if (!string.IsNullOrEmpty(vm.Title))
-        //        {
-        //            alltickets = alltickets.Where(x => x.Title == vm.Title);
-        //        }
-
-        //        if (!string.IsNullOrEmpty(vm.CreatedById))
-        //        {
-        //            alltickets = alltickets.Where(x => x.CreatedById == vm.CreatedById);
-        //        }
-
-        //        if (vm.StatusId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.StatusId == vm.StatusId);
-        //        }
-
-        //        if (vm.PriorityId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.PriorityId == vm.PriorityId);
-        //        }
-
-        //        if (vm.CategoryId > 0)
-        //        {
-        //            alltickets = alltickets.Where(x => x.SubCategory.CategoryId == vm.CategoryId);
-        //        }
-        //    }
-
-        //    vm.Tickets = await alltickets.ToListAsync();
-
-
-        //    ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
-        //        .Include(x => x.SystemCode)
-        //        .Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
-        //    ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
-        //    ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
-        //    ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails
-        //        .Include(x => x.SystemCode)
-        //        .Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-        //    return View(vm);
-        //}
-
         public async Task<IActionResult> ResolvedTickets(TicketViewModel vm)
         {
-            var currentUserId = _userManager.GetUserId(User);
-            var currentUser = await _userManager.GetUserAsync(User);
-            var userRoles = await _userManager.GetRolesAsync(currentUser);
-
-            var resolvedStatus = await _context
-                .SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "ResolutionStatus" && x.Code == "Resolved")
-                .FirstOrDefaultAsync();
-
-            var alltickets = _context.Tickets
-                .Include(t => t.CreatedBy)
-                .Include(t => t.SubCategory)
-                .Include(t => t.Priority)
-                .Include(t => t.Status)
-                .Include(t => t.TicketComments)
-                .Where(x => x.StatusId == resolvedStatus.Id)
-                .OrderByDescending(a => a.CreatedOn)
-                .AsQueryable();
-
-            // 🔐 Role-based ticket filtering
-            if (userRoles.Contains("ADMIN"))
+            try
             {
-                // Show all
+                var currentUser = await _userManager.GetUserAsync(User);
+                var resultVm = await _ticketService.GetResolvedTicketsAsync(vm, currentUser);
+
+                ViewData["PriorityId"] = await _dropdownService.GetPrioritiesAsync();
+                ViewData["CategoryId"] = await _dropdownService.GetCategoriesAsync();
+                ViewData["CreatedById"] = await _dropdownService.GetUsersAsync();
+                ViewData["StatusId"] = await _dropdownService.GetResolutionStatusesAsync();
+
+                return View(resultVm);
             }
-            else if (userRoles.Contains("SUPPORT"))
+            catch (Exception)
             {
-                alltickets = alltickets.Where(t => t.AssignedToId == currentUserId);
+
+                throw;
             }
-            else if (userRoles.Contains("USER"))
-            {
-                alltickets = alltickets.Where(t => t.CreatedById == currentUserId);
-            }
-
-            // 🔍 Filtering based on form input
-            if (vm != null)
-            {
-                if (!string.IsNullOrEmpty(vm.Title))
-                {
-                    alltickets = alltickets.Where(x => x.Title == vm.Title);
-                }
-
-                if (!string.IsNullOrEmpty(vm.CreatedById))
-                {
-                    alltickets = alltickets.Where(x => x.CreatedById == vm.CreatedById);
-                }
-
-                if (vm.StatusId > 0)
-                {
-                    alltickets = alltickets.Where(x => x.StatusId == vm.StatusId);
-                }
-
-                if (vm.PriorityId > 0)
-                {
-                    alltickets = alltickets.Where(x => x.PriorityId == vm.PriorityId);
-                }
-
-                if (vm.CategoryId > 0)
-                {
-                    alltickets = alltickets.Where(x => x.SubCategory.CategoryId == vm.CategoryId);
-                }
-            }
-
-            vm.Tickets = await alltickets.OrderBy(x => x.CreatedOn).ToListAsync();
-
-            ViewData["PriorityId"] = new SelectList(_context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "Priority"), "Id", "Description");
-
-            ViewData["CategoryId"] = new SelectList(_context.TicketCategories, "Id", "Name");
-
-            ViewData["CreatedById"] = new SelectList(_context.Users, "Id", "FullName");
-
-            ViewData["StatusId"] = new SelectList(_context.SystemCodeDetails
-                .Include(x => x.SystemCode)
-                .Where(x => x.SystemCode.Code == "ResolutionStatus"), "Id", "Description");
-
-            return View(vm);
         }
 
 

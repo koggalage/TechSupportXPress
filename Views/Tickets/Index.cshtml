@@ -207,6 +207,15 @@
                                                 }
                                             }
 
+                                            @if (User.IsInRole(Constants.ROLE_ADMIN) || User.IsInRole(Constants.ROLE_USER))
+                                            {
+                                                @if (item.Status.Code == "Pending")
+                                                {
+                                                    <a class="dropdown-item" asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                                                    <div class="dropdown-divider"></div>
+                                                }
+                                            }
+
                                             @if (item.Status.Code == "Pending")
                                             {
                                                 @if (User.IsInRole(Constants.ROLE_ADMIN))

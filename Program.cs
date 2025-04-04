@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -5,6 +6,10 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using TechSupportXPress.Brokers;
 using TechSupportXPress.Data;
 using TechSupportXPress.Models;
+using TechSupportXPress.Repositories.Interfaces;
+using TechSupportXPress.Repositories;
+using TechSupportXPress.Services.Interfaces;
+using TechSupportXPress.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,9 +24,31 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders()
-    .AddDefaultUI();
+.AddDefaultUI();
 
 builder.Services.AddTransient<IEmailSender, SESEmailSender>();
+
+// === Repositories ===
+builder.Services.AddScoped<ITicketRepository, TicketRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<ITicketResolutionRepository, TicketResolutionRepository>();
+builder.Services.AddScoped<IAuditTrailRepository, AuditTrailRepository>();
+builder.Services.AddScoped<ISystemCodeRepository, SystemCodeRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// === Services ===
+builder.Services.AddScoped<ITicketService, TicketService>();
+builder.Services.AddScoped<IDropdownService, DropdownService>();
+builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ISystemCodeService, SystemCodeService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+
+
+// === For getting IP address in AuditService ===
+builder.Services.AddHttpContextAccessor();
+
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
