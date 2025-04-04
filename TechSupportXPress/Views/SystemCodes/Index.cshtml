@@ -3,40 +3,44 @@
     ViewData["Title"] = "System Codes";
 }
 
-<div class="card rounded-4">
-    <form asp-action="Index" method="post" enctype="multipart/form-data">
-        <div class="col-md-12">
-            <div class="row p-3">
+<div class="card rounded-4 shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Search Filters</h6>
+    </div>
+
+    <div class="card-body pb-2">
+        <form asp-action="Index" method="post" enctype="multipart/form-data">
+            <div class="row g-3">
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label asp-for="Code" class="control-label"></label>
-                        <input asp-for="Code" class="form-control" />
-                    </div>
+                    <label asp-for="Code" class="form-label small">Code</label>
+                    <input asp-for="Code" class="form-control form-control-sm" placeholder="Enter Code" />
                 </div>
+
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label asp-for="Description" class="control-label"></label>
-                        <input asp-for="Description" class="form-control" />
-                    </div>
+                    <label asp-for="Description" class="form-label small">Description</label>
+                    <input asp-for="Description" class="form-control form-control-sm" placeholder="Enter Description" />
                 </div>
+
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label asp-for="CreatedById" class="control-label"></label>
-                        <select asp-for="CreatedById" name="CreatedById" class="form-control single-select" asp-items="ViewBag.CreatedById">
-                            <option value=" ">Select User</option>
-                        </select>
-                    </div>
+                    <label asp-for="CreatedById" class="form-label small">Created By</label>
+                    <select asp-for="CreatedById" name="CreatedById" class="form-select form-select-sm single-select" asp-items="ViewBag.CreatedById">
+                        <option value="">Select User</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 align-self-end d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-success w-100">
+                        <i class="bx bx-search-alt"></i> Filter
+                    </button>
+                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="bx bx-reset"></i> Reset
+                    </a>
                 </div>
             </div>
-            <div class="row p-3">
-                <div class="col-lg-2 col-md-6 d-md-flex">
-                    <button type="submit" class="btn btn-success w-100 me-md-2 mb-4"><i class="fadeIn animated bx bx-search-alt"></i> Filter</button>
-                    <a class="btn btn-primary w-100 me-md-2 mb-4"><i class="fadeIn animated bx bx-reset"></i> Reset</a>
-                </div>
-            </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
+
 
 <div class="card rounded-4">
     <div class="card-body">
