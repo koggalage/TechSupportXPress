@@ -1,68 +1,58 @@
 ﻿@model IEnumerable<TechSupportXPress.Models.AuditTrail>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "System Audit Trails";
 }
 
-<div class="card rounded-4">
+<div class="card rounded-4 shadow-sm mt-3">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-shield-check text-primary me-2"></i> System Audit Trails</h5>
+    </div>
+
     <div class="card-body">
-        <div class="d-flex align-items-center">
-            <h6 class="mb-0">System Audit Trails</h6>
-        </div>
-
-        <table class="table table-bordered table-responsive table-hover table-responsive-lg">
-            <thead>
-                <tr>
-                    <th>
-                        @Html.DisplayNameFor(model => model.Action)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.Module)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.AffectedTable)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.TimeStamp)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.IpAddress)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.User)
-                    </th>
-                    <th>View</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover table-bordered align-middle">
+                <thead class="table-light">
                     <tr>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.Action)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.Module)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.AffectedTable)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.TimeStamp)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.IpAddress)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.User.FullName)
-                        </td>
-                        <td>
-                            <a class="btn btn-warning" asp-action="Details" asp-route-id="@item.Id"><i class="fadeIn animated bx bx-bullseye"></i> Details</a>
-                        </td>
+                        <th>Action</th>
+                        <th>Module</th>
+                        <th>Affected Table</th>
+                        <th>Time</th>
+                        <th>IP Address</th>
+                        <th>User</th>
+                        <th class="text-center">View</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var badgeClass = item.Action.ToLower() switch
+                        {
+                            "create" => "success",
+                            "update" => "primary",
+                            "edit" => "primary",
+                            "delete" => "danger",
+                            _ => "secondary"
+                        };
 
+                        <tr>
+                            <td>
+                                <span class="badge bg-@badgeClass text-uppercase px-3 py-1">@item.Action</span>
+                            </td>
+                            <td>@item.Module</td>
+                            <td>@item.AffectedTable</td>
+                            <td>@item.TimeStamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            <td>@item.IpAddress</td>
+                            <td>@item.User?.FullName</td>
+                            <td class="text-center">
+                                <a class="btn btn-sm btn-outline-warning" asp-action="Details" asp-route-id="@item.Id">
+                                    <i class="bi bi-eye-fill"></i> Details
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
