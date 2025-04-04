@@ -62,7 +62,7 @@ namespace TechSupportXPress.Services
             if (vm.CategoryId > 0)
                 tickets = tickets.Where(t => t.SubCategory.CategoryId == vm.CategoryId);
 
-            vm.Tickets = await tickets.OrderByDescending(x => x.CreatedOn).ToListAsync();
+            vm.Tickets = await tickets.OrderBy(x => x.CreatedOn).ToListAsync();
 
             return vm;
         }
