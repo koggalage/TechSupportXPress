@@ -106,7 +106,7 @@ namespace TechSupportXPress.Controllers
             ViewBag.OpenTicketCount = openCount;
             ViewBag.ClosedTicketCount = closedCount;
 
-            var slaThresholdInMinutes = 5;
+            var slaThresholdInMinutes = 2;
             var slaBreaches = allTickets.Count(t =>
                 !new[] { "Closed", "Resolved" }.Contains(t.Status.Code) &&
                 DateTime.Now.Subtract(t.CreatedOn).TotalMinutes > slaThresholdInMinutes

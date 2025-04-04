@@ -171,7 +171,7 @@
                                 var formattedDuration = duration.ToString(@"hh\:mm");
                             }
 
-                            @if (item.Status.Code != "Resolved" && item.Status.Code != "Closed" && item.TicketDuration > 5)
+                            @if (item.Status.Code != "Resolved" && item.Status.Code != "Closed" && item.TicketDuration > 2)
                             {
                                 <td style="background-color: red; color: white">
                                     @formattedDuration
