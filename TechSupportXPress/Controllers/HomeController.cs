@@ -32,33 +32,6 @@ namespace TechSupportXPress.Controllers
             base.OnActionExecuting(context);
         }
 
-
-        //public async Task<IActionResult> Index(TicketDashboardViewModel vm)
-        //{
-        //    if (!User.Identity.IsAuthenticated)
-        //    {
-
-        //        return this.Redirect("~/identity/account/login");
-        //    }
-        //    else
-        //    {
-
-        //        vm.TicketsSummary = await _context.TicketsSummaryView.FirstOrDefaultAsync();
-
-
-        //        vm.Tickets = await _context.Tickets
-        //        .Include(t => t.CreatedBy)
-        //        .Include(t => t.SubCategory)
-        //        .Include(t => t.Priority)
-        //        .Include(t => t.Status)
-        //        .Include(t => t.TicketComments)
-        //        .OrderBy(x => x.CreatedOn)
-        //        .ToListAsync();
-
-        //        return View(vm);
-        //    }
-        //}
-
         public async Task<IActionResult> Index(TicketDashboardViewModel vm)
         {
             if (!User.Identity.IsAuthenticated)
@@ -136,7 +109,7 @@ namespace TechSupportXPress.Controllers
             var slaThresholdInMinutes = 5;
             var slaBreaches = allTickets.Count(t =>
                 !new[] { "Closed", "Resolved" }.Contains(t.Status.Code) &&
-                DateTime.UtcNow.Subtract(t.CreatedOn).TotalMinutes > slaThresholdInMinutes
+                DateTime.Now.Subtract(t.CreatedOn).TotalMinutes > slaThresholdInMinutes
             );
             ViewBag.SlaBreaches = slaBreaches;
 

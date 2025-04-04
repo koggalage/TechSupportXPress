@@ -47,7 +47,7 @@ namespace TechSupportXPress.Models
                 if (CreatedOn == null)
                     return null;
 
-                DateTime now = DateTime.UtcNow;
+                DateTime now = DateTime.Now;
                 TimeSpan difference = now.Subtract(CreatedOn);
 
                 return (int)difference.TotalMinutes;
