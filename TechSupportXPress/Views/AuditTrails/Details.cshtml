@@ -4,51 +4,79 @@
     ViewData["Title"] = "Details";
 }
 
-<h1>Details</h1>
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Audit Trails
+    </a>
+</div>
 
-<div>
-    <h4>AuditTrail</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Action)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Action)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Module)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Module)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.AffectedTable)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.AffectedTable)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.TimeStamp)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.TimeStamp)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IpAddress)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IpAddress)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.User)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.User.Id)
-        </dd>
-    </dl>
+<div class="card rounded-4">
+    <div class="card-body">
+        <h4 class="mb-3">Audit Trail Details</h4>
+        <hr />
+
+        <table class="table table-bordered table-hover">
+            <tr><th>Action</th><td>@Model.Action</td></tr>
+            <tr><th>Module</th><td>@Model.Module</td></tr>
+            <tr><th>Affected Table</th><td>@Model.AffectedTable</td></tr>
+            <tr><th>Timestamp</th><td>@Model.TimeStamp</td></tr>
+            <tr><th>IP Address</th><td>@Model.IpAddress</td></tr>
+            <tr><th>User</th><td>@Model.User?.FullName</td></tr>
+        </table>
+
+        @if (!string.IsNullOrEmpty(Model.OldValues) || !string.IsNullOrEmpty(Model.NewValues))
+        {
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h5 class="text-danger">Old Values</h5>
+                    <div class="bg-light border rounded p-3 overflow-auto" style="max-height:400px">
+                        <pre class="text-muted">@Html.Raw(JsonEx.PrettyPrintWithHighlight(Model.OldValues, Model.NewValues))</pre>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-success">New Values</h5>
+                    <div class="bg-light border rounded p-3 overflow-auto" style="max-height:400px">
+                        <pre class="text-muted">@Html.Raw(JsonEx.PrettyPrintWithHighlight(Model.NewValues, Model.OldValues))</pre>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+@functions {
+    public static class JsonEx
+    {
+        public static string PrettyPrintWithHighlight(string sourceJson, string compareJson)
+        {
+            if (string.IsNullOrWhiteSpace(sourceJson)) return "";
+
+            var original = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(sourceJson);
+            Dictionary<string, object> compare = null;
+
+            try
+            {
+                compare = !string.IsNullOrWhiteSpace(compareJson) ? Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(compareJson) : null;
+            }
+            catch { }
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("{");
+
+            foreach (var kvp in original)
+            {
+                var isChanged = compare != null && compare.ContainsKey(kvp.Key) && compare[kvp.Key]?.ToString() != kvp.Value?.ToString();
+                var value = System.Net.WebUtility.HtmlEncode(kvp.Value?.ToString());
+                var line = $"  \"{kvp.Key}\": \"{value}\"";
+
+                if (isChanged)
+                    sb.AppendLine($"<span style='background-color: #fff3cd'>{line}</span>,");
+                else
+                    sb.AppendLine($"{line},");
+            }
+
+            sb.AppendLine("}");
+            return sb.ToString();
+        }
+    }
+}

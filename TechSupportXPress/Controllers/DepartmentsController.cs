@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using TechSupportXPress.Data;
 using TechSupportXPress.Models;
 
@@ -85,13 +86,36 @@ namespace TechSupportXPress.Controllers
             }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
             department.CreatedOn = DateTime.Now;
             department.CreatedById = userId;
 
-            _context.Add(department);
+            // Capture new values before save
+            var newValues = JsonConvert.SerializeObject(department, Formatting.Indented);
+
+            _context.Departments.Add(department);
             await _context.SaveChangesAsync();
+
+            // Audit log
+            var activity = new AuditTrail
+            {
+                Action = "Create",
+                TimeStamp = DateTime.Now,
+                IpAddress = ipAddress,
+                UserId = userId,
+                Module = "Departments",
+                AffectedTable = "Departments",
+                NewValues = newValues
+            };
+
+            _context.AuditTrails.Add(activity);
+            await _context.SaveChangesAsync();
+
+            TempData["MESSAGE"] = "Department successfully created.";
             return RedirectToAction(nameof(Index));
         }
+
 
 
         // GET: Departments/Edit/5
@@ -119,9 +143,7 @@ namespace TechSupportXPress.Controllers
         public async Task<IActionResult> Edit(int id, Department department)
         {
             if (id != department.Id)
-            {
                 return NotFound();
-            }
 
             var exists = await _context.Departments
                 .AnyAsync(d => d.Code.ToLower() == department.Code.ToLower() && d.Id != department.Id);
@@ -135,41 +157,53 @@ namespace TechSupportXPress.Controllers
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+                var original = await _context.Departments
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.Id == id);
+
+                if (original == null)
+                    return NotFound();
+
+                var oldValues = JsonConvert.SerializeObject(original, Formatting.Indented);
+
                 department.ModifiedOn = DateTime.Now;
                 department.ModifiedById = userId;
 
                 _context.Update(department);
                 await _context.SaveChangesAsync();
 
+                var newValues = JsonConvert.SerializeObject(department, Formatting.Indented);
+
                 var activity = new AuditTrail
                 {
                     Action = "Edit",
                     TimeStamp = DateTime.Now,
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    IpAddress = ipAddress,
                     UserId = userId,
                     Module = "Departments",
-                    AffectedTable = "Department"
+                    AffectedTable = "Departments",
+                    OldValues = oldValues,
+                    NewValues = newValues
                 };
 
                 _context.Add(activity);
                 await _context.SaveChangesAsync();
 
-                TempData["MESSAGE"] = "Department successfully Updated";
+                TempData["MESSAGE"] = "Department successfully updated.";
             }
             catch (DbUpdateConcurrencyException)
             {
                 if (!DepartmentExists(department.Id))
-                {
                     return NotFound();
-                }
                 else
-                {
                     throw;
-                }
             }
 
             return RedirectToAction(nameof(Index));
         }
+
 
 
         // GET: Departments/Delete/5
@@ -198,15 +232,40 @@ namespace TechSupportXPress.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var department = await _context.Departments.FindAsync(id);
-            if (department != null)
-            {
-                _context.Departments.Remove(department);
-            }
+            var department = await _context.Departments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Id == id);
 
+            if (department == null)
+                return NotFound();
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            var oldValues = JsonConvert.SerializeObject(department, Formatting.Indented);
+
+            _context.Departments.Remove(department);
             await _context.SaveChangesAsync();
+
+            var activity = new AuditTrail
+            {
+                Action = "Delete",
+                TimeStamp = DateTime.Now,
+                IpAddress = ipAddress,
+                UserId = userId,
+                Module = "Departments",
+                AffectedTable = "Departments",
+                OldValues = oldValues,
+                NewValues = null
+            };
+
+            _context.AuditTrails.Add(activity);
+            await _context.SaveChangesAsync();
+
+            TempData["MESSAGE"] = "Department deleted successfully.";
             return RedirectToAction(nameof(Index));
         }
+
 
         private bool DepartmentExists(int id)
         {

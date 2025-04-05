@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.SignalR;
 using TechSupportXPress.Brokers;
 using TechSupportXPress.Services.Interfaces;
 using TechSupportXPress.Services;
+using Newtonsoft.Json;
 
 namespace TechSupportXPress.Controllers
 {
@@ -149,7 +150,9 @@ namespace TechSupportXPress.Controllers
 
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-                await _auditService.LogAsync("Create", userId, "Tickets", "Tickets", ipAddress);
+                var newValues = JsonConvert.SerializeObject(ticketvm, Formatting.Indented);
+
+                await _auditService.LogAsync("Create", userId, "Tickets", "Tickets", ipAddress, null, newValues);
                 await _notificationService.NotifyAdminsAsync($"New Ticket #{ticketId} created: {ticketvm.Title}");
 
                 TempData["MESSAGE"] = "Ticket successfully created";
@@ -203,12 +206,21 @@ namespace TechSupportXPress.Controllers
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
+                // Get original ticket before update
+                var originalTicket = await _ticketService.GetTicketByIdAsync(id);
+                if (originalTicket == null)
+                    return NotFound();
+
+                var oldValues = JsonConvert.SerializeObject(originalTicket, Formatting.Indented);
+
                 var updated = await _ticketService.UpdateTicketAsync(id, model, attachment, userId);
 
                 if (!updated)
                     return NotFound();
 
-                await _auditService.LogAsync("Update", userId, "Tickets", "Tickets", ipAddress);
+                var newValues = JsonConvert.SerializeObject(model, Formatting.Indented);
+
+                await _auditService.LogAsync("Update", userId, "Tickets", "Tickets", ipAddress, oldValues, newValues);
 
                 TempData["MESSAGE"] = "Ticket updated successfully.";
                 return RedirectToAction(nameof(Index));

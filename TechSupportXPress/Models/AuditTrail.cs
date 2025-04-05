@@ -23,5 +23,8 @@ namespace TechSupportXPress.Models
         [DisplayName("User")]
         public string UserId { get; set; }
         public ApplicationUser User { get; set; }
+
+        public string? OldValues { get; set; }
+        public string? NewValues { get; set; }
     }
 }

@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using TechSupportXPress.Data;
 using TechSupportXPress.Models;
 
@@ -71,6 +73,7 @@ namespace TechSupportXPress.Controllers
         public async Task<IActionResult> Create(TicketCategory ticketCategory)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
             ticketCategory.CreatedOn = DateTime.Now;
             ticketCategory.CreatedById = userId;
@@ -78,22 +81,25 @@ namespace TechSupportXPress.Controllers
                 _context.Add(ticketCategory);
                 await _context.SaveChangesAsync();
 
-            //Audit Log
-            var activity = new AuditTrail
+            var newValues = JsonConvert.SerializeObject(ticketCategory, Formatting.Indented);
+
+            // Audit log
+            var audit = new AuditTrail
             {
                 Action = "Create",
                 TimeStamp = DateTime.Now,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                IpAddress = ipAddress,
                 UserId = userId,
                 Module = "Ticket Categories",
-                AffectedTable = "TicketCategories"
+                AffectedTable = "TicketCategories",
+                OldValues = null,
+                NewValues = newValues
             };
 
-            _context.Add(activity);
+            _context.Add(audit);
             await _context.SaveChangesAsync();
 
             TempData["MESSAGE"] = "Ticket Category Successfully Added";
-
 
             return RedirectToAction(nameof(Index));
         }
@@ -122,57 +128,63 @@ namespace TechSupportXPress.Controllers
         public async Task<IActionResult> Edit(int id, TicketCategory ticketCategory)
         {
             if (id != ticketCategory.Id)
-            {
                 return NotFound();
-            }
 
-                try
-                {
+            try
+            {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
+                var existing = await _context.TicketCategories
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == id);
+
+                if (existing == null)
+                    return NotFound();
+
+                // Serialize old values
+                var oldValues = JsonConvert.SerializeObject(existing, Formatting.Indented);
+
+                // Update fields
+                ticketCategory.CreatedById = existing.CreatedById;
+                ticketCategory.CreatedOn = existing.CreatedOn;
                 ticketCategory.ModifiedOn = DateTime.Now;
                 ticketCategory.ModifiedById = userId;
 
                 _context.Update(ticketCategory);
-                    await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
-                //Audit Log
-                var activity = new AuditTrail
+                // Serialize new values
+                var newValues = JsonConvert.SerializeObject(ticketCategory, Formatting.Indented);
+
+                // Audit log
+                var audit = new AuditTrail
                 {
                     Action = "Edit",
                     TimeStamp = DateTime.Now,
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    IpAddress = ipAddress,
                     UserId = userId,
                     Module = "Ticket Categories",
-                    AffectedTable = "TicketCategories"
+                    AffectedTable = "TicketCategories",
+                    OldValues = oldValues,
+                    NewValues = newValues
                 };
 
-
-                _context.Add(activity);
+                _context.Add(audit);
                 await _context.SaveChangesAsync();
 
-                TempData["MESSAGE"] = "Comment successfully Updated";
-
-
+                TempData["MESSAGE"] = "Ticket Category Successfully Updated";
+                return RedirectToAction(nameof(Index));
             }
             catch (DbUpdateConcurrencyException)
-                {
-                    if (!TicketCategoryExists(ticketCategory.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+            {
+                if (!TicketCategoryExists(ticketCategory.Id))
+                    return NotFound();
 
-            TempData["MESSAGE"] = "Ticket Category Successfully Updated";
-
-            return RedirectToAction(nameof(Index));
-            
-
+                throw;
+            }
         }
+
 
         // GET: TicketCategories/Delete/5
         public async Task<IActionResult> Delete(int? id)
@@ -217,12 +229,34 @@ namespace TechSupportXPress.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Serialize old state before deletion
+            var oldValues = JsonConvert.SerializeObject(ticketCategory, Formatting.Indented);
+
             _context.TicketCategories.Remove(ticketCategory);
+            await _context.SaveChangesAsync();
+
+            var audit = new AuditTrail
+            {
+                Action = "Delete",
+                TimeStamp = DateTime.Now,
+                IpAddress = ipAddress,
+                UserId = userId,
+                Module = "Ticket Categories",
+                AffectedTable = "TicketCategories",
+                OldValues = oldValues,
+                NewValues = null
+            };
+
+            _context.AuditTrails.Add(audit);
             await _context.SaveChangesAsync();
 
             TempData["MESSAGE"] = "Category deleted successfully";
             return RedirectToAction(nameof(Index));
         }
+
 
 
         private bool TicketCategoryExists(int id)

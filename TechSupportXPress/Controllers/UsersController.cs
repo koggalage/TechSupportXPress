@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System.Security.Claims;
 using TechSupportXPress.Data;
 using TechSupportXPress.Models;
@@ -94,17 +95,10 @@ namespace TechSupportXPress.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(UserCreateViewModel model)
         {
-            //if (!ModelState.IsValid)
-            //{
-            //    model.Roles = await _rolemanager.Roles
-            //        .Select(r => new SelectListItem { Value = r.Name, Text = r.Name })
-            //        .ToListAsync();
-            //    return View(model);
-            //}
-
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
                 ApplicationUser registereduser = new()
                 {
@@ -134,14 +128,19 @@ namespace TechSupportXPress.Controllers
                         await _userManager.AddToRoleAsync(registereduser, model.Role);
                     }
 
+                    // Audit Log
+                    var newValues = JsonConvert.SerializeObject(registereduser, Formatting.Indented);
+
                     var activity = new AuditTrail
                     {
                         Action = "Create",
                         TimeStamp = DateTime.Now,
-                        IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                        IpAddress = ipAddress,
                         UserId = userId,
                         Module = "Users",
-                        AffectedTable = "Users"
+                        AffectedTable = "Users",
+                        OldValues = null,
+                        NewValues = newValues
                     };
 
                     _context.Add(activity);
@@ -153,13 +152,12 @@ namespace TechSupportXPress.Controllers
                 else
                 {
                     foreach (var error in result.Errors)
-                    {
                         ModelState.AddModelError("", error.Description);
-                    }
 
                     model.Roles = await _rolemanager.Roles
                         .Select(r => new SelectListItem { Value = r.Name, Text = r.Name })
                         .ToListAsync();
+
                     return View(model);
                 }
             }
@@ -171,6 +169,7 @@ namespace TechSupportXPress.Controllers
                 return View(model);
             }
         }
+
 
         // GET: UsersController/Edit/5
         public async Task<IActionResult> Edit(string id)
@@ -223,17 +222,15 @@ namespace TechSupportXPress.Controllers
             if (id != model.Id)
                 return NotFound();
 
-            //if (!ModelState.IsValid)
-            //{
-            //    model.Roles = await _rolemanager.Roles
-            //        .Select(r => new SelectListItem { Value = r.Name, Text = r.Name })
-            //        .ToListAsync();
-            //    return View(model);
-            //}
-
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
                 return NotFound();
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Capture old values before update
+            var oldValues = JsonConvert.SerializeObject(user, Formatting.Indented);
 
             // Update user fields
             user.FirstName = model.FirstName;
@@ -261,9 +258,28 @@ namespace TechSupportXPress.Controllers
             if (!string.IsNullOrEmpty(model.Role))
                 await _userManager.AddToRoleAsync(user, model.Role);
 
+            // Capture new values after update
+            var newValues = JsonConvert.SerializeObject(user, Formatting.Indented);
+
+            var activity = new AuditTrail
+            {
+                Action = "Edit",
+                TimeStamp = DateTime.Now,
+                IpAddress = ipAddress,
+                UserId = userId,
+                Module = "Users",
+                AffectedTable = "Users",
+                OldValues = oldValues,
+                NewValues = newValues
+            };
+
+            _context.Add(activity);
+            await _context.SaveChangesAsync();
+
             TempData["MESSAGE"] = "User updated successfully";
             return RedirectToAction(nameof(Index));
         }
+
 
 
         // GET: UsersController/Delete/5
@@ -291,7 +307,13 @@ namespace TechSupportXPress.Controllers
             if (user == null)
                 return NotFound();
 
-            // Soft delete by marking as deleted and prefixing email and username
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Capture old values before soft delete
+            var oldValues = JsonConvert.SerializeObject(user, Formatting.Indented);
+
+            // Soft delete logic
             user.IsDeleted = true;
 
             var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
@@ -307,22 +329,29 @@ namespace TechSupportXPress.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Optional: log audit
-            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            _context.AuditTrails.Add(new AuditTrail
+            // Capture new values after soft delete
+            var newValues = JsonConvert.SerializeObject(user, Formatting.Indented);
+
+            // Log Audit
+            var activity = new AuditTrail
             {
                 Action = "Soft Delete",
                 TimeStamp = DateTime.Now,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                IpAddress = ipAddress,
                 UserId = currentUserId,
                 Module = "Users",
-                AffectedTable = "AspNetUsers"
-            });
+                AffectedTable = "AspNetUsers",
+                OldValues = oldValues,
+                NewValues = newValues
+            };
+
+            _context.AuditTrails.Add(activity);
             await _context.SaveChangesAsync();
 
             TempData["MESSAGE"] = "User deleted successfully (soft delete).";
             return RedirectToAction(nameof(Index));
         }
+
 
 
 

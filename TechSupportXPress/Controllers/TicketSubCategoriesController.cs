@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using TechSupportXPress.Data;
 using TechSupportXPress.Models;
 using TechSupportXPress.ViewModels;
@@ -101,33 +102,36 @@ namespace TechSupportXPress.Controllers
         public async Task<IActionResult> Create(int id, TicketSubCategory ticketSubCategory)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
             ticketSubCategory.CreatedById = userId;
             ticketSubCategory.CreatedOn = DateTime.Now;
-
-            ticketSubCategory.Id = 0;
+            ticketSubCategory.Id = 0; // Resetting for EF to auto-generate
             ticketSubCategory.CategoryId = id;
+
             _context.Add(ticketSubCategory);
             await _context.SaveChangesAsync();
 
-            //Audit Log
-            var activity = new AuditTrail
+            var newValues = JsonConvert.SerializeObject(ticketSubCategory, Formatting.Indented);
+
+            var audit = new AuditTrail
             {
                 Action = "Create",
                 TimeStamp = DateTime.Now,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                IpAddress = ipAddress,
                 UserId = userId,
                 Module = "Ticket Sub-Categories",
-                AffectedTable = "TicketSubCategories"
+                AffectedTable = "TicketSubCategories",
+                NewValues = newValues
             };
 
-            _context.Add(activity);
+            _context.Add(audit);
             await _context.SaveChangesAsync();
 
-
             TempData["MESSAGE"] = "Ticket Sub-Category Details successfully Created";
-
             return RedirectToAction("Index", new { id = id });
         }
+
 
         // GET: TicketSubCategories/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -153,51 +157,58 @@ namespace TechSupportXPress.Controllers
         public async Task<IActionResult> Edit(int id, TicketSubCategory ticketSubCategory)
         {
             if (id != ticketSubCategory.Id)
-            {
                 return NotFound();
+
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+                var oldSubCategory = await _context.TicketSubCategories
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == id);
+
+                if (oldSubCategory == null)
+                    return NotFound();
+
+                // Set audit fields
+                ticketSubCategory.ModifiedById = userId;
+                ticketSubCategory.ModifiedOn = DateTime.Now;
+
+                _context.Update(ticketSubCategory);
+                await _context.SaveChangesAsync();
+
+                var oldValues = JsonConvert.SerializeObject(oldSubCategory, Formatting.Indented);
+                var newValues = JsonConvert.SerializeObject(ticketSubCategory, Formatting.Indented);
+
+                var audit = new AuditTrail
+                {
+                    Action = "Edit",
+                    TimeStamp = DateTime.Now,
+                    IpAddress = ipAddress,
+                    UserId = userId,
+                    Module = "Ticket Sub-Categories",
+                    AffectedTable = "TicketSubCategories",
+                    OldValues = oldValues,
+                    NewValues = newValues
+                };
+
+                _context.Add(audit);
+                await _context.SaveChangesAsync();
+
+                TempData["MESSAGE"] = "Ticket Sub-Category Details successfully Updated";
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TicketSubCategoryExists(ticketSubCategory.Id))
+                    return NotFound();
+
+                throw;
             }
 
-                try
-                {
-                    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                    ticketSubCategory.ModifiedById = userId;
-                    ticketSubCategory.ModifiedOn = DateTime.Now;
-
-                    _context.Update(ticketSubCategory);
-                    await _context.SaveChangesAsync();
-
-                    //Audit Log
-                    var activity = new AuditTrail
-                    {
-                        Action = "Edit",
-                        TimeStamp = DateTime.Now,
-                        IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                        UserId = userId,
-                        Module = "Ticket Sub-Categories",
-                        AffectedTable = "TicketSubCategories"
-                    };
-
-                    _context.Add(activity);
-                    await _context.SaveChangesAsync();
-
-                    TempData["MESSAGE"] = "Ticket Sub-Category Details successfully Updated";
-
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!TicketSubCategoryExists(ticketSubCategory.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-
-            //return RedirectToAction(nameof(Index));
             return RedirectToAction("Index", new { id = ticketSubCategory.CategoryId });
         }
+
 
         // GET: TicketSubCategories/Delete/5
         public async Task<IActionResult> Delete(int? id)
@@ -226,15 +237,40 @@ namespace TechSupportXPress.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var ticketSubCategory = await _context.TicketSubCategories.FindAsync(id);
-            if (ticketSubCategory != null)
-            {
-                _context.TicketSubCategories.Remove(ticketSubCategory);
-            }
+            var ticketSubCategory = await _context.TicketSubCategories
+                .Include(t => t.CreatedBy)
+                .Include(t => t.ModifiedBy)
+                .FirstOrDefaultAsync(t => t.Id == id);
 
+            if (ticketSubCategory == null)
+                return NotFound();
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var oldValues = JsonConvert.SerializeObject(ticketSubCategory, Formatting.Indented);
+
+            _context.TicketSubCategories.Remove(ticketSubCategory);
             await _context.SaveChangesAsync();
+
+            var audit = new AuditTrail
+            {
+                Action = "Delete",
+                TimeStamp = DateTime.Now,
+                IpAddress = ipAddress,
+                UserId = userId,
+                Module = "Ticket Sub-Categories",
+                AffectedTable = "TicketSubCategories",
+                OldValues = oldValues,
+                NewValues = null
+            };
+
+            _context.Add(audit);
+            await _context.SaveChangesAsync();
+
+            TempData["MESSAGE"] = "Ticket Sub-Category successfully deleted";
             return RedirectToAction("Index", new { id = ticketSubCategory.CategoryId });
         }
+
 
         private bool TicketSubCategoryExists(int id)
         {

@@ -15,7 +15,7 @@ namespace TechSupportXPress.Services
             _http = http;
         }
 
-        public async Task LogAsync(string action, string userId, string module, string table, string ipAddress = null)
+        public async Task LogAsync(string action, string userId, string module, string table, string ipAddress = null, string? oldValues = null, string? newValues = null)
         {
             var audit = new AuditTrail
             {
@@ -24,11 +24,14 @@ namespace TechSupportXPress.Services
                 IpAddress = ipAddress ?? _http.HttpContext?.Connection.RemoteIpAddress?.ToString(),
                 UserId = userId,
                 Module = module,
-                AffectedTable = table
+                AffectedTable = table,
+                OldValues = oldValues,
+                NewValues = newValues
             };
 
             await _repo.AddAuditAsync(audit);
         }
+
 
         public async Task<List<AuditTrail>> GetAllAsync()
         {

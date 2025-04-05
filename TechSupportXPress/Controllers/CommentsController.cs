@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using TechSupportXPress.Data;
 using TechSupportXPress.Models;
 using TechSupportXPress.Repositories.Interfaces;
@@ -20,15 +21,18 @@ namespace TechSupportXPress.Controllers
         private readonly ICommentService _commentService;
         private readonly IUserRepository _userRepo;
         private readonly ITicketRepository _ticketRepo;
+        private readonly IAuditTrailService _auditService;
 
         public CommentsController(
             ICommentService commentService,
             IUserRepository userRepo,
-            ITicketRepository ticketRepo)
+            ITicketRepository ticketRepo,
+            IAuditTrailService auditService)
         {
             _commentService = commentService;
             _userRepo = userRepo;
             _ticketRepo = ticketRepo;
+            _auditService = auditService;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -92,7 +96,21 @@ namespace TechSupportXPress.Controllers
 
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            await _commentService.CreateAsync(comment, userId, ipAddress);
+            var newValues = JsonConvert.SerializeObject(comment, Formatting.Indented);
+
+            comment.CreatedById = userId;
+
+            await _commentService.CreateAsync(comment);
+
+            await _auditService.LogAsync(
+                action: "Create",
+                userId: userId,
+                module: "Comments",
+                table: "Comments",
+                ipAddress: ipAddress,
+                oldValues: null,
+                newValues: newValues
+    );
 
             TempData["MESSAGE"] = "Comment successfully Added";
             return RedirectToAction(nameof(Index));
@@ -129,8 +147,6 @@ namespace TechSupportXPress.Controllers
             if (id != comment.Id)
                 return NotFound();
 
-            if (!ModelState.IsValid)
-                return View(comment);
 
             try
             {
@@ -138,7 +154,27 @@ namespace TechSupportXPress.Controllers
 
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-                await _commentService.UpdateAsync(comment, userId, ipAddress);
+                //var oldComment = await _commentService.GetByIdAsync(id);
+                //var oldValues = JsonConvert.SerializeObject(oldComment, Formatting.Indented);
+
+                comment.ModifiedOn = DateTime.Now;
+                comment.ModifiedById = userId;
+
+                await _commentService.UpdateAsync(comment);
+
+               // var newComment = await _commentService.GetByIdAsync(id);
+                //var newValues = JsonConvert.SerializeObject(newComment, Formatting.Indented);
+
+                // Log audit
+                //await _auditService.LogAsync(
+                //    action: "Update",
+                //    userId: userId,
+                //    module: "Comments",
+                //    table: "Comments",
+                //    ipAddress: ipAddress,
+                //    oldValues: oldValues,
+                //    newValues: newValues
+                //);
 
                 TempData["MESSAGE"] = "Comment successfully updated.";
                 return RedirectToAction(nameof(Index));
@@ -174,10 +210,25 @@ namespace TechSupportXPress.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            var result = await _commentService.DeleteAsync(id, userId, ipAddress);
+            //var oldComment = await _commentService.GetByIdAsync(id);
+            //var oldValues = JsonConvert.SerializeObject(oldComment, Formatting.Indented);
+
+            var result = await _commentService.DeleteAsync(id);
 
             if (result)
+            {
+                //await _auditService.LogAsync(
+                //    action: "Delete",
+                //    userId: userId,
+                //    module: "Comments",
+                //    table: "Comments",
+                //    ipAddress: ipAddress,
+                //    oldValues: oldValues,
+                //    newValues: null
+                //);
+
                 TempData["MESSAGE"] = "Comment deleted successfully.";
+            }
             else
                 TempData["Error"] = "Failed to delete comment.";
 
