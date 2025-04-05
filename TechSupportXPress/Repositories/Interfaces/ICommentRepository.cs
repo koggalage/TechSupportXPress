@@ -13,6 +13,7 @@ namespace TechSupportXPress.Repositories.Interfaces
         Task<bool> ExistsAsync(int id);
         Task DeleteAsync(Comment comment);
         Task<Comment?> GetByIdAsync(int id);
+        Task DeleteByTicketIdAsync(int ticketId);
 
     }
 }

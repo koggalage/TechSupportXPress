@@ -157,6 +157,9 @@ namespace TechSupportXPress.Services
             if (ticket == null)
                 return false;
 
+            // Delete comments first
+            await _commentRepo.DeleteByTicketIdAsync(id);
+
             await _ticketRepo.DeleteAsync(ticket);
             return true;
         }

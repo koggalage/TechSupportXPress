@@ -64,6 +64,8 @@ namespace TechSupportXPress.Controllers
                 });
             }
 
+            ViewBag.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             return View(userRoles);
         }
 

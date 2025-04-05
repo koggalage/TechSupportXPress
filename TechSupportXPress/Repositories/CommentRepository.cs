@@ -81,5 +81,19 @@ namespace TechSupportXPress.Repositories
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
+        public async Task DeleteByTicketIdAsync(int ticketId)
+        {
+            var comments = await _context.Comments
+                .Where(c => c.TicketId == ticketId)
+                .ToListAsync();
+
+            if (comments.Any())
+            {
+                _context.Comments.RemoveRange(comments);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+
     }
 }
