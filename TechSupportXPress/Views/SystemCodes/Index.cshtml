@@ -64,7 +64,7 @@
                         <th>
                             @Html.DisplayNameFor(model => model.CreatedOn)
                         </th>
-                        <th>View</th>
+                        @* <th>View</th> *@
                         @* <th>Edit</th> *@
                         @* <th>Delete</th> *@
                     </tr>
@@ -85,9 +85,9 @@
                             <td>
                                 @Html.DisplayFor(modelItem => item.CreatedOn)
                             </td>
-                            <td>
+                            @* <td>
                                 <a class="btn btn-warning" asp-action="Details" asp-route-id="@item.Id"><i class="fadeIn animated bx bx-bullseye"></i> Details</a>
-                            </td>
+                            </td> *@
                            @*  <td>
                                 <a class="btn btn-primary" asp-action="Edit" asp-route-id="@item.Id"><i class="fadeIn animated bx bx-edit-alt"></i> Edit</a>
                             </td>

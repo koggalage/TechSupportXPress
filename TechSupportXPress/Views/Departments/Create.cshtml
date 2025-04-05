@@ -10,53 +10,34 @@
     </a>
 </div>
 
-<div class="card rounded-4">
+<div class="card rounded-4 shadow-sm">
     <div class="card-body">
-        <div class="d-flex align-items-center">
-            <h6 class="mb-0">Add New Department</h6>
-        </div>
+        <h4 class="mb-3 text-primary bi bi-plus-circle"><i class="bi bi-building-add"></i> Add New Department</h4>
         <hr />
-        <div class="row">
 
-            <form asp-action="Create">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-            <div class="col-md-12">
-
-               
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-                    <div class="row">
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="Code" class="control-label"></label>
-                                <input asp-for="Code" class="form-control" />
-                                <span asp-validation-for="Code" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="Name" class="control-label"></label>
-                                <input asp-for="Name" class="form-control" />
-                                <span asp-validation-for="Name" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                    </div>
-
-            </div>
-
-                <div class="row p-3">
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary float-end"><i class="fadeIn animated bx bx-save"></i> Create</button>
-                    </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Code" class="form-label">Department Code</label>
+                    <input asp-for="Code" class="form-control" placeholder="Enter department code" />
+                    <span asp-validation-for="Code" class="text-danger small"></span>
                 </div>
 
-             </form>
+                <div class="col-md-6">
+                    <label asp-for="Name" class="form-label">Department Name</label>
+                    <input asp-for="Name" class="form-control" placeholder="Enter department name" />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+            </div>
 
-        </div>
-
+            <div class="text-end mt-4">
+                <button type="submit" class="btn btn-success px-4">
+                    <i class="bx bx-save"></i> Create
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 

@@ -10,11 +10,9 @@
     </a>
 </div>
 
-<div class="card rounded-4">
+<div class="card rounded-4 shadow-sm">
     <div class="card-body">
-        <div class="d-flex align-items-center">
-            <h6 class="mb-0">Update Ticket</h6>
-        </div>
+        <h4 class="mb-3 text-warning"><i class="bi bi-pencil-square"></i> Edit Ticket</h4>
         <hr />
 
         <form asp-action="Edit" method="post" enctype="multipart/form-data">
@@ -22,67 +20,53 @@
             <input type="hidden" asp-for="CreatedById" />
             <input type="hidden" asp-for="CreatedOn" />
 
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="row">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
+            <div class="row g-3">
                 <div class="col-md-6">
-                    <div class="form-group">
-                        <label asp-for="Title" class="control-label"></label>
-                        <input asp-for="Title" class="form-control" />
-                        <span asp-validation-for="Title" class="text-danger"></span>
-                    </div>
+                    <label asp-for="Title" class="form-label"></label>
+                    <input asp-for="Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger small"></span>
                 </div>
 
                 <div class="col-md-6">
-                    <div class="form-group">
-                        <label asp-for="Description" class="control-label"></label>
-                        <input asp-for="Description" class="form-control" />
-                        <span asp-validation-for="Description" class="text-danger"></span>
-                    </div>
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
                 </div>
 
                 <div class="col-md-6">
-                    <div class="form-group">
-                        <label asp-for="PriorityId" class="control-label"></label>
-                        <select asp-for="PriorityId" class="form-control" asp-items="ViewBag.PriorityId"></select>
-                        <span asp-validation-for="PriorityId" class="text-danger"></span>
-                    </div>
+                    <label asp-for="PriorityId" class="form-label"></label>
+                    <select asp-for="PriorityId" class="form-select" asp-items="ViewBag.PriorityId"></select>
+                    <span asp-validation-for="PriorityId" class="text-danger small"></span>
                 </div>
 
                 <div class="col-md-6">
-                    <div class="form-group">
-                        <label asp-for="CategoryId" class="control-label"></label>
-                        <select asp-for="CategoryId" class="form-control get-subcategories" asp-items="ViewBag.CategoryId"></select>
-                        <span asp-validation-for="CategoryId" class="text-danger"></span>
-                    </div>
+                    <label asp-for="CategoryId" class="form-label"></label>
+                    <select asp-for="CategoryId" class="form-select get-subcategories" asp-items="ViewBag.CategoryId"></select>
+                    <span asp-validation-for="CategoryId" class="text-danger small"></span>
                 </div>
 
                 <div class="col-md-6">
-                    <div class="form-group">
-                        <label asp-for="SubCategoryId" class="control-label"></label>
-                        <select asp-for="SubCategoryId" class="form-control" asp-items="ViewBag.SubCategoryId"></select>
-                        <span asp-validation-for="SubCategoryId" class="text-danger"></span>
-                    </div>
+                    <label asp-for="SubCategoryId" class="form-label"></label>
+                    <select asp-for="SubCategoryId" class="form-select" asp-items="ViewBag.SubCategoryId"></select>
+                    <span asp-validation-for="SubCategoryId" class="text-danger small"></span>
                 </div>
 
                 <div class="col-md-6">
-                    <div class="form-group">
-                        <label asp-for="Attachment" class="control-label"></label>
-                        <input type="file" name="attachment" class="form-control" accept=".png,.jpg,.jpeg,.pdf,.doc" />
-                        @if (!string.IsNullOrEmpty(Model.Attachment))
-                        {
-                            <small class="text-muted">Current File: @Model.Attachment</small>
-                        }
-                    </div>
+                    <label asp-for="Attachment" class="form-label">Attachment</label>
+                    <input type="file" name="attachment" class="form-control" accept=".png,.jpg,.jpeg,.pdf,.doc" />
+                    @if (!string.IsNullOrEmpty(Model.Attachment))
+                    {
+                        <small class="text-muted">Current File: @Model.Attachment</small>
+                    }
                 </div>
             </div>
 
-            <div class="row p-3">
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary float-end">
-                        <i class="bi bi-save"></i> Save
-                    </button>
-                </div>
+            <div class="text-end mt-4">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save"></i> Save
+                </button>
             </div>
         </form>
     </div>
@@ -91,7 +75,6 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        // Optional: Dynamic SubCategory loading if you use AJAX
         $(".get-subcategories").change(function () {
             const categoryId = $(this).val();
             const subCategoryDropdown = $("[name='SubCategoryId']");

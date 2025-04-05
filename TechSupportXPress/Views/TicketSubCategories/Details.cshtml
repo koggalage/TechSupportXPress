@@ -10,53 +10,19 @@
     </a>
 </div>
 
-<h1>Details</h1>
+<div class="card rounded-4">
+    <div class="card-body">
+        <h4 class="mb-3 text-info"><i class="bi bi-file-earmark-text"></i> Ticket Sub Category Details</h4>
+        <hr />
 
-<div>
-    <h4>Ticket Sub Category</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Category)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Category.Id)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Code)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Code)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.CreatedBy)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.CreatedBy.FullName)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.CreatedOn)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.CreatedOn)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.ModifiedBy)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.ModifiedBy.FullName)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.ModifiedOn)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.ModifiedOn)
-        </dd>
-    </dl>
+        <table class="table table-bordered table-hover">
+            <tr><th>@Html.DisplayNameFor(model => model.Category)</th><td>@Html.DisplayFor(model => model.Category.Id)</td></tr>
+            <tr><th>@Html.DisplayNameFor(model => model.Code)</th><td>@Html.DisplayFor(model => model.Code)</td></tr>
+            <tr><th>@Html.DisplayNameFor(model => model.Name)</th><td>@Html.DisplayFor(model => model.Name)</td></tr>
+            <tr><th>@Html.DisplayNameFor(model => model.CreatedBy)</th><td>@Html.DisplayFor(model => model.CreatedBy.FullName)</td></tr>
+            <tr><th>@Html.DisplayNameFor(model => model.CreatedOn)</th><td>@Html.DisplayFor(model => model.CreatedOn)</td></tr>
+            <tr><th>@Html.DisplayNameFor(model => model.ModifiedBy)</th><td>@Html.DisplayFor(model => model.ModifiedBy.FullName)</td></tr>
+            <tr><th>@Html.DisplayNameFor(model => model.ModifiedOn)</th><td>@Html.DisplayFor(model => model.ModifiedOn)</td></tr>
+        </table>
+    </div>
 </div>

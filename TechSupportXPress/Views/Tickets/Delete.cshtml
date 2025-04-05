@@ -10,76 +10,49 @@
     </a>
 </div>
 
-<div class="card rounded-4">
+<div class="card rounded-4 shadow-sm">
     <div class="card-body">
         <div class="d-flex align-items-center">
-            <h6 class="mb-0">Delete Ticket</h6>
+            <h4 class="mb-3 text-danger"><i class="bi bi-trash-fill"></i> Delete Ticket</h4>
         </div>
 
-        @* <h3>Are you sure you want to delete this?</h3> *@
-        <div>
-            <hr />
-            <div class="row">
-                <table class="table table-bordered table-responsive table-hover table-responsive-lg">
+        <hr />
 
-                    <tr>
-                        <th>
-                            @Html.DisplayNameFor(model => model.Title)
-                        </th>
-                        <td>
-                            @Html.DisplayFor(model => model.Title)
-                        </td>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <tr>
+                    <th>@Html.DisplayNameFor(model => model.Title)</th>
+                    <td>@Html.DisplayFor(model => model.Title)</td>
 
-                        <th>
-                            @Html.DisplayNameFor(model => model.Description)
-                        </th>
-                        <td>
-                            @Html.DisplayFor(model => model.Description)
-                        </td>
-                    </tr>
+                    <th>@Html.DisplayNameFor(model => model.Description)</th>
+                    <td>@Html.DisplayFor(model => model.Description)</td>
+                </tr>
 
-                    <tr>
-                        <th>
-                            @Html.DisplayNameFor(model => model.StatusId)
-                        </th>
-                        <td>
-                            @Html.DisplayFor(model => model.Status.Code)
-                        </td>
+                <tr>
+                    <th>@Html.DisplayNameFor(model => model.StatusId)</th>
+                    <td>@Html.DisplayFor(model => model.Status.Code)</td>
 
-                        <th>
-                            @Html.DisplayNameFor(model => model.Priority)
-                        </th>
-                        <td>
-                            @Html.DisplayFor(model => model.Priority.Code)
-                        </td>
-                    </tr>
+                    <th>@Html.DisplayNameFor(model => model.Priority)</th>
+                    <td>@Html.DisplayFor(model => model.Priority.Code)</td>
+                </tr>
 
-                    <tr>
-                        <th>
-                            @Html.DisplayNameFor(model => model.CreatedBy.FullName)
-                        </th>
-                        <td>
-                            @Html.DisplayFor(model => model.CreatedBy.FullName)
-                        </td>
+                <tr>
+                    <th>@Html.DisplayNameFor(model => model.CreatedBy.FullName)</th>
+                    <td>@Html.DisplayFor(model => model.CreatedBy.FullName)</td>
 
-                        <th>
-                            @Html.DisplayNameFor(model => model.CreatedOn)
-                        </th>
-                        <td>
-                            @Html.DisplayFor(model => model.CreatedOn)
-                        </td>
-                    </tr>
-
-                </table>
-
-            </div>
+                    <th>@Html.DisplayNameFor(model => model.CreatedOn)</th>
+                    <td>@Html.DisplayFor(model => model.CreatedOn)</td>
+                </tr>
+            </table>
         </div>
-    </div>
 
-    <div class="row p-3">
-        <form asp-action="Delete">
-            <input type="hidden" asp-for="Id" />
-            <button type="submit" class="btn btn-danger float-end"><i class="fadeIn animated bx bx-save"></i> Delete</button>
-        </form>
+        <div class="text-end mt-4">
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn btn-danger px-4">
+                    <i class="bx bx-trash"></i> Confirm Delete
+                </button>
+            </form>
+        </div>
     </div>
 </div>

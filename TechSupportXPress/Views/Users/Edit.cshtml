@@ -10,127 +10,94 @@
     </a>
 </div>
 
-<div class="card rounded-4">
+<div class="card rounded-4 shadow-sm">
     <div class="card-body">
         <div class="d-flex align-items-center">
-            <h6 class="mb-0">Edit User</h6>
+            <h4 class="mb-3 text-warning"><i class="bi bi-pencil-square"></i> Edit User</h4>
         </div>
         <hr />
-        <div class="row">
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-            <form asp-action="Edit" method="post">
-
-            <div class="col-md-12">
-                
-                    <input type="hidden" asp-for="Id" />
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="FirstName" class="control-label"></label>
-                                <input asp-for="FirstName" class="form-control" />
-                                <span asp-validation-for="FirstName" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="MiddleName" class="control-label"></label>
-                                <input asp-for="MiddleName" class="form-control" />
-                                <span asp-validation-for="MiddleName" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="LastName" class="control-label"></label>
-                                <input asp-for="LastName" class="form-control" />
-                                <span asp-validation-for="LastName" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="control-label">Gender</label><br />
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" asp-for="Gender" value="Male" checked="@(Model.Gender == "Male")" />
-                                    <label class="form-check-label" for="Gender">Male</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" asp-for="Gender" value="Female" checked="@(Model.Gender == "Female")" />
-                                    <label class="form-check-label" for="Gender">Female</label>
-                                </div>
-                                <span asp-validation-for="Gender" class="text-danger"></span>
-                            </div>
-                        </div>
-
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="Email" class="control-label"></label>
-                                <input asp-for="Email" class="form-control" />
-                                <span asp-validation-for="Email" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="PhoneNumber" class="control-label"></label>
-                                <input asp-for="PhoneNumber" class="form-control" />
-                                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="Country" class="control-label"></label>
-                                <input asp-for="Country" class="form-control" />
-                                <span asp-validation-for="Country" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="City" class="control-label"></label>
-                                <input asp-for="City" class="form-control" />
-                                <span asp-validation-for="City" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="UserName" class="control-label"></label>
-                                <input asp-for="UserName" class="form-control" />
-                                <span asp-validation-for="UserName" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <!-- Role Dropdown -->
-                        <div class="form-group">
-                            <label asp-for="Role" class="control-label"></label>
-                            <select asp-for="Role" asp-items="Model.Roles" class="form-control"></select>
-                            <span asp-validation-for="Role" class="text-danger"></span>
-                        </div>
-
-                    </div>
-
-                   
-            </div>
-
-                <div class="row p-3">
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary float-end"><i class="fadeIn animated bx bx-save"></i> Save</button>
-                    </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="FirstName" class="form-label"></label>
+                    <input asp-for="FirstName" class="form-control" />
+                    <span asp-validation-for="FirstName" class="text-danger small"></span>
                 </div>
 
-            </form>
+                <div class="col-md-6">
+                    <label asp-for="MiddleName" class="form-label"></label>
+                    <input asp-for="MiddleName" class="form-control" />
+                    <span asp-validation-for="MiddleName" class="text-danger small"></span>
+                </div>
 
-        </div>
+                <div class="col-md-6">
+                    <label asp-for="LastName" class="form-label"></label>
+                    <input asp-for="LastName" class="form-control" />
+                    <span asp-validation-for="LastName" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Gender</label><br />
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" asp-for="Gender" value="Male" checked="@(Model.Gender == "Male")" />
+                        <label class="form-check-label">Male</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" asp-for="Gender" value="Female" checked="@(Model.Gender == "Female")" />
+                        <label class="form-check-label">Female</label>
+                    </div>
+                    <span asp-validation-for="Gender" class="text-danger small d-block"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="PhoneNumber" class="form-label"></label>
+                    <input asp-for="PhoneNumber" class="form-control" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Country" class="form-label"></label>
+                    <input asp-for="Country" class="form-control" />
+                    <span asp-validation-for="Country" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="City" class="form-label"></label>
+                    <input asp-for="City" class="form-control" />
+                    <span asp-validation-for="City" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="UserName" class="form-label"></label>
+                    <input asp-for="UserName" class="form-control" />
+                    <span asp-validation-for="UserName" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Role" class="form-label"></label>
+                    <select asp-for="Role" asp-items="Model.Roles" class="form-select">
+                        <option value="">-- Select Role --</option>
+                    </select>
+                    <span asp-validation-for="Role" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="text-end mt-4">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="fadeIn animated bx bx-save"></i> Save
+                </button>
+            </div>
+        </form>
     </div>
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {
