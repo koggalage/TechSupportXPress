@@ -168,7 +168,14 @@ namespace TechSupportXPress.Areas.Identity.Pages.Account
 
                     await _userManager.AddToRoleAsync(user, "USER");
 
-                    var verifiedEmails = new List<string>() { "tpkoggalage@gmail.com" };
+                    var verifiedEmails = new List<string>() { 
+                        "tpkoggalage@gmail.com",
+                        "CL-MSCIT-26-28@student.icbtcampus.edu.lk",
+                        "CL-MSCIT-25-19@student.icbtcampus.edu.lk",
+                        "CL-MSCIT-25-25@student.icbtcampus.edu.lk",
+                        "sandundananjaysrilal@gmail.com",
+                        "CL-MSCIT-26-40@student.icbtcampus.edu.lk"
+                    };
 
                     if (verifiedEmails.Contains(Input.Email))
                     {
@@ -179,19 +186,20 @@ namespace TechSupportXPress.Areas.Identity.Pages.Account
                             "<p>Welcome to <strong>TechSupportXPress</strong>! We're excited to have you with us.</p>" +
                             "<p>You can now start submitting support tickets and track their progress.</p>" +
                             "<br /><p>Cheers,<br />The TechSupportXPress Team</p>");
+
+                        // Send Email Confirmation
+                        var userId = await _userManager.GetUserIdAsync(user);
+                        var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                        var callbackUrl = Url.Page(
+                            "/Account/ConfirmEmail",
+                            pageHandler: null,
+                            values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
+                            protocol: Request.Scheme);
+
+                        await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
                     }
-
-                    var userId = await _userManager.GetUserIdAsync(user);
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                        protocol: Request.Scheme);
-
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {

@@ -71,7 +71,14 @@ namespace TechSupportXPress.Areas.Identity.Pages.Account
                     values: new { area = "Identity", code },
                     protocol: Request.Scheme);
 
-                var verifiedEmails = new List<string>() { "tpkoggalage@gmail.com" };
+                var verifiedEmails = new List<string>() {
+                        "tpkoggalage@gmail.com",
+                        "CL-MSCIT-26-28@student.icbtcampus.edu.lk",
+                        "CL-MSCIT-25-19@student.icbtcampus.edu.lk",
+                        "CL-MSCIT-25-25@student.icbtcampus.edu.lk",
+                        "sandundananjaysrilal@gmail.com",
+                        "CL-MSCIT-26-40@student.icbtcampus.edu.lk"
+                    };
 
                 if (verifiedEmails.Contains(Input.Email))
                 {
