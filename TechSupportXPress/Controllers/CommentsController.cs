@@ -56,6 +56,9 @@ namespace TechSupportXPress.Controllers
         public async Task<IActionResult> TicketsComments(int id)
         {
             var comments = await _commentService.GetByTicketIdAsync(id);
+
+            ViewBag.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             return View(comments);
         }
 
