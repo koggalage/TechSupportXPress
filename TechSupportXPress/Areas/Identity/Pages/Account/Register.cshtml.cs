@@ -174,7 +174,9 @@ namespace TechSupportXPress.Areas.Identity.Pages.Account
                         "CL-MSCIT-25-19@student.icbtcampus.edu.lk",
                         "CL-MSCIT-25-25@student.icbtcampus.edu.lk",
                         "sandundananjaysrilal@gmail.com",
-                        "CL-MSCIT-26-40@student.icbtcampus.edu.lk"
+                        "CL-MSCIT-26-40@student.icbtcampus.edu.lk",
+                        "cl-mscit-26-39@student.icbtcampus.edu.lk",
+                        "mdmsgunathilaka@gmail.com",
                     };
 
                     if (verifiedEmails.Contains(Input.Email))
